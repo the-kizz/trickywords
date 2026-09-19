@@ -1,0 +1,43 @@
+{
+  "name": "trickywords",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "next typegen && tsc --noEmit",
+    "typegen": "next typegen"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
+    "motion": "^13.3.0",
+    "next": "16.3.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.20.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
+    "drizzle-kit": "^0.31.10",
+    "jsdom": "^30.0.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.13",
+    "typescript": "^5",
+    "vitest": "^5.0.1"
+  }
+}

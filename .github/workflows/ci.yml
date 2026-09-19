@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    # The image build cross-compiles better-sqlite3 for arm64 under QEMU,
+    # which is slow; the unit suite spins up 69 jsdom environments.
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # `npm run typecheck` runs `next typegen` first. The route types
+      # this app's layout uses (`LayoutProps<"/">`) are generated into
+      # .next/types, which exists on a developer's machine because they
+      # have run the dev server -- and does not exist in a clean checkout.
+      # Typechecking passed locally and failed here on the first run.
+      - name: Type check
+        run: npm run typecheck
+
+      # The audio clips are committed, and `durations.ts` is generated from
+      # them at build time. A clip changed without regenerating the table
+      # would leave the player waiting out the wrong length on every round,
+      # so the suite asserts the table matches the files it describes.
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  image:
+    runs-on: ubuntu-latest
+    needs: test-build
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+
+      # Built for both architectures on every push, so a release cannot be
+      # the first time the arm64 cross-build is attempted -- but pushed
+      # nowhere from here. Publishing is `release.yml`, on a tag.
+      - name: Build image (no push)
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

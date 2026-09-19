@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Andika';
+  src: url('/fonts/Andika-Regular.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Andika';
+  src: url('/fonts/Andika-Bold.woff2') format('woff2');
+  font-weight: 700; font-display: swap;
+}
+@font-face {
+  font-family: 'Baloo 2';
+  src: url('/fonts/Baloo2-Bold.woff2') format('woff2');
+  font-weight: 700; font-display: swap;
+}
+
+@theme {
+  --color-primary: #2563EB;
+  --color-on-primary: #FFFFFF;
+  --color-play: #F59E0B;
+  --color-on-play: #0F172A;
+  --color-fun: #EC4899;
+  --color-background: #EFF6FF;
+  --color-foreground: #0F172A;
+  --color-card: #FFFFFF;
+  --color-muted: #F1F5FD;
+  --color-muted-foreground: #475569;
+  --color-border: #E4ECFC;
+
+  --font-word: 'Andika', system-ui, sans-serif;
+  --font-display: 'Baloo 2', system-ui, sans-serif;
+
+  --radius-clay: 20px;
+  --shadow-clay: 0 8px 0 rgba(15,23,42,0.12), inset 0 -4px 8px rgba(15,23,42,0.06);
+}
+
+/*
+ * Baloo 2 is a rounded *display* face and is only ever shipped at
+ * weight 700 (public/fonts/Baloo2-Bold.woff2) -- it is reserved for
+ * display headings and big celebratory text via the `font-display`
+ * utility, always paired with `font-bold`. Every other UI element --
+ * buttons, labels, instructions, body copy -- defaults to Andika here,
+ * which is self-hosted at genuine weights 400 and 700 (see the two
+ * @font-face rules above). This avoids ever asking a family for a
+ * weight neither face actually has, which a browser can only answer by
+ * faux-bolding/thinning the one file it does have.
+ */
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-word);
+}
+
+/* Motion is meaning here, not decoration — but it is never required. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * The companion's one movement: on reaching a new growth stage it
+ * settles up from its feet, once. Anchored to the bottom because the
+ * artwork is bottom-aligned (the plant grows upward out of a body that
+ * stays put), so scaling from the centre would make the feet drift.
+ * `Companion` also drops this class outright when the child's system
+ * asks for reduced motion -- the media query above is the second net.
+ */
+@keyframes companion-grow {
+  from { transform: scale(0.94); opacity: 0.85; }
+  to   { transform: none;        opacity: 1;    }
+}
+.companion-grow {
+  animation: companion-grow 600ms ease-out;
+  transform-origin: bottom center;
+}
+
+/*
+ * The islands' winding path, applied only when the grid is wide enough
+ * for it to read as a path.
+ *
+ * The wave repeats every four islands, which at three or more columns
+ * looks like a route. At two columns it fights the numbering instead:
+ * island 4 (rise 2.25rem) sat *above* island 3 (rise 4.5rem), so a
+ * phone read Set 4 before Set 3, Set 8 before Set 7, Set 12 before
+ * Set 11 -- reading order against counting order, for a child who is
+ * still learning both.
+ *
+ * Done as a container query rather than a media query or a measuring
+ * hook: the threshold that matters is the grid's own width, not the
+ * viewport's (the grid sits inside two lots of page padding and a
+ * max-width), and a query means there is no first-paint flash of one
+ * layout replaced by the other. 28.25rem = 452px is exactly three
+ * 140px `auto-fit` tracks plus their two 1rem gaps, i.e. the width at
+ * which the third column appears.
+ */
+.island-map { container-type: inline-size; }
+.island { margin-top: 0; justify-self: center; }
+@container (min-width: 28.25rem) {
+  .island {
+    margin-top: var(--island-rise);
+    justify-self: var(--island-lean);
+  }
+}
