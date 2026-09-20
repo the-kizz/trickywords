@@ -5,10 +5,12 @@ import { resolveSiteUrl } from "@/lib/site-url";
 const TITLE = "Tricky Words";
 const DESCRIPTION = "A gentle, self-hosted sight words app for children aged 5-7.";
 // Describes the card at `public/og-card.png`. Kept in step with the
-// image: the old wording described the placeholder card, which showed
-// the word "said" with a heart over its tricky part.
+// image: the wording has been wrong twice, once describing a
+// placeholder card and once promising seven games, and the card is the
+// first thing anyone sees when the link is shared.
 const OG_IMAGE_ALT =
-  'Tricky Words — a cheering blue character holding a letter T tile with a pink heart, beside the tagline "Seven games for the tricky words from school."';
+  'Tricky Words — the word "said" on a large white card, above the line '
+  + '"Sight words for five- to seven-year-olds".';
 
 const siteUrl = resolveSiteUrl(process.env);
 

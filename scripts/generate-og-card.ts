@@ -44,8 +44,16 @@ const COLOR_FOREGROUND = '#0F172A'
 
 // Same heart path as WordTile.tsx, so the mark on this card is the same
 // shape a child sees in the app, not a lookalike drawn separately.
-const HEART_PATH =
-  'M12 21s-7-4.7-9.3-8.6C1 9.5 2.6 6 6 6c2 0 3.2 1.1 4 2.2C10.8 7.1 12 6 14 6c3.4 0 5 3.5 3.3 6.4C19 16.3 12 21 12 21z'
+/*
+ * The card no longer marks a grapheme.
+ *
+ * It used to draw a heart over the `ai` of "said", reusing the app's own
+ * mark so the card matched what a child saw. The app does not draw that
+ * mark any more -- naming the tricky part inside a word is not the method
+ * this child's programme teaches, see `src/lib/teaching.ts` -- so a card
+ * that still showed one would advertise a lesson the app does not give.
+ * The heart stays where it belongs, in the wordmark.
+ */
 
 const repoRoot = join(import.meta.dirname, '..')
 
@@ -171,7 +179,7 @@ function buildHtml(): string {
     <div class="title">Tricky Words</div>
     <div class="card">
       <div class="word">
-        <span class="grapheme">s</span><span class="grapheme"><svg class="heart" viewBox="0 0 24 24"><path d="${HEART_PATH}"/></svg>ai</span><span class="grapheme">d</span>
+        <span class="grapheme">said</span>
       </div>
     </div>
     <div class="tagline">Sight words for five- to seven-year-olds</div>
