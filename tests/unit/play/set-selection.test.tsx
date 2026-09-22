@@ -23,14 +23,14 @@ beforeEach(() => {
  */
 describe('/play honours ?set=N', () => {
   it('drops a returning visitor with an avatar straight into that set', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     window.history.pushState({}, '', '/play?set=3')
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.getByTestId('round-counter')).toBeInTheDocument()
   })
 
   it('ignores an out-of-range set number and shows the map instead', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     window.history.pushState({}, '', '/play?set=999')
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.queryByTestId('round-counter')).toBeNull()
@@ -47,14 +47,14 @@ describe('/play honours ?set=N', () => {
   it('never introduces a word from a set the child has not reached', () => {
     // With no progress yet, the pool is exactly that set's words --
     // `sessionPool` never reaches into a later set.
-    saveGuest({ avatar: 'owl', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'owl', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     window.history.pushState({}, '', '/play?set=1')
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.getByTestId('round-counter')).toHaveTextContent('1')
   })
 
   it('lets a child leave the session for the map without finishing it', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     window.history.pushState({}, '', '/play?set=3')
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByTestId('session-back'))

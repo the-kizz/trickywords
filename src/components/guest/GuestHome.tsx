@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { MIN_TARGET_PX } from '@/lib/constants'
+import { ADULT_TARGET_PX, MIN_TARGET_PX } from '@/lib/constants'
 import { Avatar, AVATAR_IDS, AVATAR_LABELS } from '@/components/avatar/Avatar'
 import { Wordmark } from '@/components/brand/Wordmark'
 import { loadGuest, saveGuest, clearGuest, type GuestState } from '@/lib/guest/store'
@@ -11,6 +11,11 @@ import { currentSet, isSetFullyKnown } from '@/lib/engine/unlock'
 import { KnowThemAll } from '@/components/map/KnowThemAll'
 import { IslandWords } from '@/components/map/IslandWords'
 import { SchoolSetPicker } from '@/components/map/SchoolSetPicker'
+import { GrownUpToggle } from '@/components/map/GrownUpToggle'
+import { CardRun } from '@/components/family/CardRun'
+import { GROWN_UP_DEFAULT } from '@/lib/teaching'
+import { dayKey, newProgress, recordCardRead } from '@/lib/engine/ladder'
+import { applyStruggleRules } from '@/lib/engine/strugglers'
 import { companionStage } from '@/lib/rewards'
 import { useAudio } from '@/lib/audio/player'
 import { PHRASES, phraseAudioUrl } from '@/lib/audio/manifest'
@@ -21,7 +26,7 @@ interface Props {
   sets: WordSet[]
 }
 
-type View = 'avatar' | 'map' | 'session'
+type View = 'avatar' | 'map' | 'session' | 'cards'
 
 const HONESTY_LINE = 'Your progress stays on this device, just for this visit.'
 
@@ -151,6 +156,28 @@ export function GuestHome({ sets }: Props) {
   function pickAvatar(id: string) {
     persist({ ...guest, avatar: id })
     setView('map')
+  }
+
+  // Null in the stored record means nobody has said, which reads as
+  // yes: this app is used with a parent sitting alongside. See
+  // `GROWN_UP_DEFAULT`.
+  const grownUp = guest.grownUp ?? GROWN_UP_DEFAULT
+
+  /**
+   * One card answered in a Cards run. Scored by `recordCardRead`, the
+   * same function the family surface uses, so guest play cannot come to
+   * a different verdict about the same card.
+   */
+  function handleCardRead(word: Word, alone: boolean) {
+    const current = guest.progress[word.id] ?? newProgress(word.id)
+    const next = applyStruggleRules(recordCardRead(current, alone, dayKey()))
+    const known = Object.values({ ...guest.progress, [word.id]: next })
+      .filter((p) => p.stage === 'known').length
+    persist({
+      ...guest,
+      progress: { ...guest.progress, [word.id]: next },
+      bestKnown: Math.max(guest.bestKnown, known),
+    })
   }
 
   function handleProgressChange(p: WordProgress) {
@@ -345,6 +372,18 @@ export function GuestHome({ sets }: Props) {
     )
   }
 
+  if (view === 'cards' && here) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-6">
+        <CardRun
+          words={here.words}
+          onRead={handleCardRead}
+          onDone={() => setView('map')}
+        />
+      </main>
+    )
+  }
+
   if (view === 'session' && sessionWords) {
     return (
       /*
@@ -355,6 +394,7 @@ export function GuestHome({ sets }: Props) {
       <main className="flex flex-1 flex-col items-center justify-center gap-[clamp(1rem,5vh,3rem)] px-6 py-6">
         <SessionRunner
           key={go}
+          grownUp={grownUp}
           words={sessionWords}
           islandWordIds={sessionIslandWordIds}
           initialProgress={progress}
@@ -386,6 +426,24 @@ export function GuestHome({ sets }: Props) {
       />
 
       {knowsThemAll && <KnowThemAll stage={companionStage(guest.bestKnown)} />}
+
+      <GrownUpToggle
+        here={grownUp}
+        onChange={(next) => persist({ ...guest, grownUp: next })}
+      />
+
+      {grownUp && here && (
+        <button
+          type="button"
+          onClick={() => setView('cards')}
+          style={{ minHeight: ADULT_TARGET_PX }}
+          className="rounded-clay border-2 border-border bg-card px-5 text-sm font-semibold
+            text-muted-foreground cursor-pointer select-none hover:text-foreground
+            focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
+        >
+          Go through {here.name}&rsquo;s cards
+        </button>
+      )}
 
       <IslandWords sets={sets} hereId={here?.id} schoolSetId={guest.schoolSetId}>
         <SchoolSetPicker

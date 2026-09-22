@@ -48,3 +48,31 @@ export const HEART_MARKS_ENABLED = false
  * without unpicking the rotation. There is no reason to.
  */
 export const READ_ROUND_ENABLED = true
+
+/**
+ * Whether a grown-up is assumed to be sitting with the child.
+ *
+ * True, because that is how this app is actually used: a parent opens it
+ * and sits down with their child. The switch on the map exists to say
+ * otherwise, not to opt in.
+ *
+ * What it changes is who judges a Read it round, and so what a reading
+ * is worth. With an adult there, "They read it" promotes the word on the
+ * ordinary ladder and "Tell them" records a miss -- it is the school's
+ * own assessment, done at the kitchen table. Alone, the child judges
+ * herself, which is recorded and can never promote.
+ *
+ * The cost of this default, stated rather than hidden: a child playing
+ * alone with the switch left on can tap "They read it" about a word
+ * nobody heard, and the ladder will believe it. Three things hold that
+ * down -- the controls are adult-sized, worded rather than iconic, and
+ * neither wears the primary fill every button she taps all session wears
+ * -- and the switch is one tap away on the map. An operator who leaves
+ * children alone with it should turn it off.
+ *
+ * An earlier version defaulted to false and expired the flag daily, to
+ * stop one left on overnight. With parent-present as the stated default
+ * there is no forgotten flag to expire: both states are now deliberate,
+ * and both persist until changed.
+ */
+export const GROWN_UP_DEFAULT = true

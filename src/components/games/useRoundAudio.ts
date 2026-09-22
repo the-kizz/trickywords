@@ -88,6 +88,19 @@ export interface RoundAudio {
    */
   say: (phrase: PhraseKey) => number
   /**
+   * A nudge and then the word again, in that order and neither cutting
+   * the other off.
+   *
+   * Interrupts: the child has just acted, so whatever the round was
+   * still saying is no longer what she needs to hear. The pair is one
+   * call because the second clip has to wait for the first, and the
+   * length of the first is only known from the generated clip table --
+   * Listen and Find used to chain these on a hard-coded 700ms, which is
+   * shorter than "Have another go" at this voice's rate, so the nudge
+   * was cut off by the word it was introducing.
+   */
+  nudgeThenWord: (phrase: PhraseKey) => void
+  /**
    * The word, then "Well done!", queued behind whatever is sounding.
    *
    * Queued rather than spoken, because a celebration belongs to the app
@@ -150,7 +163,7 @@ export function useRoundAudio(
   onMiss?: () => void,
   targetsShowWords = false,
 ): RoundAudio {
-  const { speak, enqueue } = useAudio()
+  const { speak, speakSequence, enqueue } = useAudio()
   const reduced = useReducedMotion()
   const [listens, setListens] = useState(0)
   const [missed, setMissed] = useState(false)
@@ -169,6 +182,10 @@ export function useRoundAudio(
     speak(url)
     return clipDurationMs(url)
   }, [speak])
+
+  const nudgeThenWord = useCallback((phrase: PhraseKey) => {
+    speakSequence([phraseAudioUrl(phrase), wordAudioUrl(round.word.audioId)])
+  }, [speakSequence, round])
 
   const celebrate = useCallback((audioId: string) => {
     const urls = [wordAudioUrl(audioId), phraseAudioUrl('wellDone')]
@@ -240,6 +257,7 @@ export function useRoundAudio(
     markMissed,
     sayWord,
     say,
+    nudgeThenWord,
     celebrate,
   }
 }

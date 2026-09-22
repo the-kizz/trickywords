@@ -38,7 +38,7 @@ type Closing =
  */
 export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
   const {
-    prompted, hearWord, markMissed, sayWord, say, revealPhase, asking,
+    prompted, hearWord, markMissed, say, nudgeThenWord, revealPhase, asking,
   } = useRoundAudio(round, 'findTheWord', onMiss, true)
   const [nudge, setNudge] = useState<string | null>(null)
   const [closing, setClosing] = useState<Closing>('asking')
@@ -109,8 +109,9 @@ export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
     // support becomes explicit, and nothing on screen says "wrong".
     markMissed()
     setNudge('Have another go')
-    say('tryAgain')
-    window.setTimeout(sayWord, 700)
+    // The invitation, then the word again -- waited out rather than
+    // guessed at. See `nudgeThenWord`.
+    nudgeThenWord('tryAgain')
   }
 
   return (

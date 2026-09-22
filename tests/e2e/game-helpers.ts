@@ -101,13 +101,39 @@ export async function sessionFinished(page: Page): Promise<boolean> {
 }
 
 /** Which round type is currently on screen, by its container testid. */
+/** Every testid that means "a round is on screen", including Read it's
+ * second screen. */
+const ROUND_SCREEN_TESTIDS = [...Object.values(ROUND_TESTID), 'read-it-sentence']
+
+/**
+ * Whether any round is on screen right now, without waiting.
+ *
+ * Exists because rounds hold themselves open for their closing audio,
+ * so there is a real beat between them with nothing to detect -- a
+ * caller driving its own loop polls this rather than pausing a fixed
+ * time and hoping.
+ */
+export async function roundOnScreen(page: Page): Promise<boolean> {
+  for (const testid of ROUND_SCREEN_TESTIDS) {
+    if ((await page.getByTestId(testid).count()) > 0) return true
+  }
+  return false
+}
+
 export async function detectRoundType(page: Page): Promise<RoundType> {
   // A highly-supported round opens on the written word alone and the
   // round's own container arrives only once the word has been said and
   // has faded (see `useRoundAudio` rule 4), so there is a second or two
   // at the top of such a round with nothing on screen to detect.
+  // Includes `read-it-sentence`: it is Read it's second screen, so a
+  // round can legitimately be showing it, and waiting on a selector
+  // that excluded it meant burning the whole timeout before the check
+  // below could even run.
+  const anyRoundScreen = ROUND_SCREEN_TESTIDS
+    .map((t) => `[data-testid="${t}"]`)
+    .join(', ')
   await page
-    .locator(Object.values(ROUND_TESTID).map((t) => `[data-testid="${t}"]`).join(', '))
+    .locator(anyRoundScreen)
     .first()
     .waitFor({ state: 'visible', timeout: 15_000 })
     .catch(() => {
@@ -116,6 +142,12 @@ export async function detectRoundType(page: Page): Promise<RoundType> {
   for (const [id, testid] of Object.entries(ROUND_TESTID) as Array<[RoundType, string]>) {
     if ((await page.getByTestId(testid).count()) > 0) return id
   }
+  // Read it has two screens, and only the first carries `read-it`: once
+  // the reading is judged it asks for a sentence under
+  // `read-it-sentence`. A helper dropped into that second screen -- which
+  // is easy now the round holds itself open for the praise and the model
+  // sentence -- would otherwise report no round at all.
+  if ((await page.getByTestId('read-it-sentence').count()) > 0) return 'read'
   throw new Error('No known round container found on screen')
 }
 
@@ -214,10 +246,45 @@ async function solveWhereIsTheHeart(page: Page): Promise<void> {
   await page.waitForTimeout(150)
 }
 
+/**
+ * Read it: nothing to tap but the judgement.
+ *
+ * A grown-up is assumed to be there by default (`GROWN_UP_DEFAULT`), so
+ * the adult's controls are what is normally on screen, and the sentence
+ * step follows the reading. Both paths resolve the round; the child's
+ * own tick is here because the switch can be turned off.
+ */
+async function solveReadIt(page: Page): Promise<void> {
+  const before = await getMarker(page)
+  const sentence = page.getByRole('button', { name: 'They said a sentence' })
+  const adult = page.getByRole('button', { name: 'They read it' })
+  if (await adult.count()) {
+    await adult.click({ force: true })
+    await sentence.click({ force: true })
+  } else if (await sentence.count()) {
+    // Already past the reading, on the sentence screen.
+    await sentence.click({ force: true })
+  } else {
+    await page.getByRole('button', { name: 'I said that' }).click({ force: true })
+  }
+  // Waited on the round marker rather than a fixed pause, because this
+  // round holds itself open longer than any other: it queues "Well
+  // done!" and, when a sentence was asked for, the app's own sentence as
+  // a model, and only hands over once both have been heard (see
+  // `ReadIt.finish`). A helper that walked on after a fixed 150ms
+  // arrived while the round was still resolving and then looked for
+  // Find it's choices on a screen that had none.
+  await expect
+    .poll(() => getMarker(page), { timeout: 20_000 })
+    .not.toBe(before)
+  await awaitRoundSettled(page)
+}
+
 /** Plays whichever round is currently on screen to a correct answer. */
 export async function solveCurrentRound(page: Page, type: RoundType): Promise<void> {
   if (type === 'build') return solveHeartWordBuilder(page)
   if (type === 'heart') return solveWhereIsTheHeart(page)
+  if (type === 'read') return solveReadIt(page)
   return tapTargetWord(page)
 }
 
@@ -233,15 +300,55 @@ export async function playSessionToCelebration(
   const maxRounds = opts.maxRounds ?? 20
   const seen: RoundType[] = []
   for (let i = 0; i < maxRounds; i++) {
-    await page.waitForTimeout(100)
     if (await sessionFinished(page)) break
+    const before = await getMarker(page)
     const type = await detectRoundType(page)
     seen.push(type)
     await assertNoFailureOrScoreLanguage(page)
     await solveCurrentRound(page, type)
     await assertNoFailureOrScoreLanguage(page)
+    // Wait for the round to actually hand over before looking at the
+    // next one, rather than pausing for a fixed 100ms and hoping.
+    //
+    // Every round now holds itself open until its closing audio has been
+    // heard -- "Well done!" is 742ms, and a Read it round that was asked
+    // for a sentence also waits out the model sentence. The old fixed
+    // pauses were shorter than that, so this walker could read the
+    // previous round's screen as the next round's: it passed alone and
+    // failed inside a full parallel run, where the machine is busy and
+    // every timer lands later. Failures looked like "No button named
+    // 'my' among the choices", which reads as a broken app and was
+    // really a broken wait.
+    await expect
+      .poll(async () => (await sessionFinished(page)) ? 'done' : getMarker(page),
+            { timeout: 25_000 })
+      .not.toBe(before)
   }
   await expect(page.getByTestId('celebration')).toBeVisible()
   await assertNoFailureOrScoreLanguage(page)
   return seen
+}
+
+/**
+ * Unlocks the parent area, surviving the hydration race.
+ *
+ * Retried for the same reason `pickFirstAvatar` is: `domcontentloaded`
+ * fires before React has hydrated, so a `fill` in that window sets the
+ * input's DOM value and is handled by nobody -- the controlled input's
+ * state never changes, the submit button stays disabled, and hydration
+ * then replaces the typed value with React's empty one. Filling inside
+ * the poll means a lost first attempt is simply retyped.
+ *
+ * A bare `toBeEnabled()` assertion here was not enough: it waited for
+ * a state that the lost keystrokes meant would never arrive.
+ */
+export async function unlockParentArea(page: Page, pin: string): Promise<void> {
+  const unlock = page.getByRole('button', { name: /unlock/i })
+  await expect
+    .poll(async () => {
+      await page.getByLabel(/enter pin/i).fill(pin)
+      return unlock.isEnabled()
+    }, { timeout: 15_000 })
+    .toBe(true)
+  await unlock.click()
 }

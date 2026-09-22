@@ -38,7 +38,7 @@ describe('GuestHome', () => {
    * finger destroyed a session. It is now on the map, and two-step.
    */
   it('asks before it starts again, so one tap cannot wipe the visit', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
 
     await userEvent.click(screen.getByTestId('start-again-ask'))
@@ -48,7 +48,7 @@ describe('GuestHome', () => {
   })
 
   it('offers Start again for the next child on a shared device, on the second tap', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByTestId('start-again-ask'))
     await userEvent.click(screen.getByTestId('start-again-confirm'))
@@ -56,7 +56,7 @@ describe('GuestHome', () => {
   })
 
   it('lets a child change their mind, keeping everything', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 3, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByTestId('start-again-ask'))
     await userEvent.click(screen.getByTestId('start-again-cancel'))
@@ -69,7 +69,7 @@ describe('GuestHome', () => {
    * the screen a child is answering questions on.
    */
   it('keeps Start again off the session screen entirely', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByRole('button', { name: /^Set 1,/ }))
     await waitFor(

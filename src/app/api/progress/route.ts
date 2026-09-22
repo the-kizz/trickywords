@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isPublicMode } from '@/lib/mode'
 import { getDb } from '@/lib/db/client'
-import { dayKey } from '@/lib/engine/ladder'
 import { saveProgress, setLastSetId, setGrownUpHere } from '@/lib/db/progress'
 import { raiseBestKnown } from '@/lib/db/profiles'
 
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
   }
   // Whether a grown-up is sitting with them. Kept so an evening of
   // reading together does not have to be declared again every session.
-  if (typeof grownUp === 'boolean') setGrownUpHere(db, id, grownUp, dayKey())
+  if (typeof grownUp === 'boolean') setGrownUpHere(db, id, grownUp)
   // The companion and the sticker book are drawn from this mark.
   // `raiseBestKnown` never lowers it.
   if (typeof bestKnown === 'number' && Number.isFinite(bestKnown)) {

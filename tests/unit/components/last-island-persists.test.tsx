@@ -58,21 +58,21 @@ describe('the island they were on survives a reload', () => {
   })
 
   it('is written to the guest record when a guest session starts', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={SETS} />)
     await userEvent.click(screen.getByRole('button', { name: /^Set 5,/ }))
     expect(loadGuest().lastSetId).toBe(5)
   })
 
   it('is where a guest map starts from after a refresh', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: 5, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: 5, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={SETS} />)
     expect(screen.getByRole('button', { name: /^Set 5, where you are/ })).toBeInTheDocument()
   })
 
   /** Guest state stays in sessionStorage: no cookie, no server write. */
   it('makes no server call and sets no cookie in guest mode', async () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={SETS} />)
     await userEvent.click(screen.getByRole('button', { name: /^Set 5,/ }))
     expect(fetchMock).not.toHaveBeenCalled()

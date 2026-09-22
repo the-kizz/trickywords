@@ -116,6 +116,10 @@ test('a wrong tap is recorded, and shows the child nothing', async ({ page }) =>
   // The round still resolves only on a correct answer.
   await solveCurrentRound(page, 'find')
   await awaitRoundSettled(page)
-  await page.waitForTimeout(250)
-  expect(await roundMarker(page)).not.toBe(markerBefore)
+  // Polled, not a fixed pause: a correct answer now holds the round open
+  // until "Well done!" has finished sounding (742ms at this voice), so
+  // the next word never appears over the top of the praise. The 250ms
+  // this used to wait was shorter than the clip.
+  await expect.poll(() => roundMarker(page), { timeout: 15_000 })
+    .not.toBe(markerBefore)
 })

@@ -33,14 +33,14 @@ function everythingKnown(): Record<string, WordProgress> {
  */
 describe('the finish line', () => {
   it('is absent while there is still an island to finish', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.queryByTestId('know-them-all')).toBeNull()
   })
 
   it('appears once every island is finished', () => {
     saveGuest({
-      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, startedAt: 1,
+      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.getByTestId('know-them-all')).toBeVisible()
@@ -52,7 +52,7 @@ describe('the finish line', () => {
     const play = vi.fn().mockResolvedValue(undefined)
     window.HTMLMediaElement.prototype.play = play
     saveGuest({
-      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, startedAt: 1,
+      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(play).toHaveBeenCalled()
@@ -61,7 +61,7 @@ describe('the finish line', () => {
   /** Nothing closes. A child who knows them all may still want to play. */
   it('leaves every island tappable underneath it', () => {
     saveGuest({
-      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, startedAt: 1,
+      avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     const islands = screen.getByRole('group', { name: /word set map/i })

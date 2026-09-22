@@ -7,11 +7,10 @@ import { Avatar } from '@/components/avatar/Avatar'
 import { ProgressMap } from '@/components/map/ProgressMap'
 import { SessionRunner } from '@/components/SessionRunner'
 import { sessionPool } from '@/lib/engine/session'
-import {
-  dayKey, newProgress, recordCorrect, recordMiss, recordReadToAdult,
-} from '@/lib/engine/ladder'
+import { dayKey, newProgress, recordCardRead } from '@/lib/engine/ladder'
 import { applyStruggleRules } from '@/lib/engine/strugglers'
 import { currentSet, isSetFullyKnown } from '@/lib/engine/unlock'
+import { GROWN_UP_DEFAULT } from '@/lib/teaching'
 import { KnowThemAll } from '@/components/map/KnowThemAll'
 import { IslandWords } from '@/components/map/IslandWords'
 import { GrownUpToggle } from '@/components/map/GrownUpToggle'
@@ -49,8 +48,9 @@ interface Props {
   schoolSetId?: number | null
   /**
    * Whether an adult is sitting with this child, from the
-   * `grownUp:<profileId>` setting. It changes who judges a Read it
-   * round, and nothing else -- see `GrownUpToggle`.
+   * `grownUp:<profileId>` setting -- on unless somebody has said
+   * otherwise. It changes who judges a Read it round, and nothing else
+   * -- see `GrownUpToggle` and `GROWN_UP_DEFAULT`.
    */
   grownUpHere?: boolean
 }
@@ -82,14 +82,14 @@ async function persist(body: Record<string, unknown>) {
  */
 export function FamilyPlay({
   profileId, profileName, profileAvatar, sets, initialProgress,
-  bestKnown: savedBest, lastSetId, schoolSetId, grownUpHere = false,
+  bestKnown: savedBest, lastSetId, schoolSetId, grownUpHere = GROWN_UP_DEFAULT,
 }: Props) {
   const [progress, setProgress] = useState<Map<string, WordProgress>>(
     () => new Map(Object.entries(initialProgress)),
   )
   const [view, setView] = useState<View>('map')
-  // Seeded from the stored setting: a parent who sat down for the
-  // evening should not have to say so again after every session.
+  // Seeded from the stored setting, which is on unless somebody turned
+  // it off -- this app is used with a parent sitting alongside.
   const [grownUp, setGrownUp] = useState(grownUpHere)
   const [sessionWords, setSessionWords] = useState<Word[] | null>(null)
   /** Which go of this sitting is running -- see `playAgain`. */
@@ -179,30 +179,12 @@ export function FamilyPlay({
 
   /**
    * One card answered in a Cards run -- the same judgement a Read it
-   * round asks for, recorded the same way. "They read it" is unaided and
-   * promotes; being told is a hint and does not. The day floor inside
-   * `recordCorrect` still applies, so going through the deck twice in an
-   * evening cannot run a word up the ladder.
+   * round asks for. What it is worth lives in `recordCardRead`, shared
+   * with guest play so the two surfaces cannot score a card differently.
    */
   function handleCardRead(word: Word, alone: boolean) {
     const current = progress.get(word.id) ?? newProgress(word.id)
-    // Read unaided, and the ordinary ladder credits it -- day floor and
-    // all. Needing to be told is a miss, recorded through the same
-    // channel a wrong tap uses, or the cards could only ever push words
-    // up and a word failed every evening would still read as known.
-    //
-    // The new-word cap is deliberately not applied: it exists because a
-    // session shows a brand-new word and then asks for it, which is
-    // recognition of something just seen. An adult hearing a word read
-    // from print is not that, whatever box it is on.
-    const scored = alone
-      ? recordReadToAdult(recordCorrect(current, false, dayKey(), true))
-      : recordMiss(current, false)
-    // The review schedule belongs to the sessions. A card run is an
-    // assessment taken outside them -- no `decrementDue` pass runs after
-    // it -- so resetting the interval here would push these words further
-    // out every evening and they would stop coming back as review.
-    const next = applyStruggleRules({ ...scored, dueInSessions: current.dueInSessions })
+    const next = applyStruggleRules(recordCardRead(current, alone, dayKey()))
     setProgress((prev) => new Map(prev).set(word.id, next))
     void persist({ profileId, progress: next })
     // The companion is drawn from the high-water mark, so a word that

@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import type { Db } from './client'
 import { progress, settings } from './schema'
 import type { Stage, WordProgress } from '@/lib/engine/types'
+import { GROWN_UP_DEFAULT } from '@/lib/teaching'
 
 export function loadProgress(
   db: Db, profileId: number,
@@ -107,34 +108,27 @@ export function getSchoolSetId(db: Db, profileId: number): number | null {
  * Whether an adult is sitting with this child.
  *
  * A setting rather than a profile column for the same reason the others
- * are: it is not part of their progress, and a keyed row needs no
+ * are: it is not part of her progress, and a keyed row needs no
  * migration on a database a family updates by pulling a new image.
  *
  * Per child, because in a house with two children one may be reading to
- * a parent while the other plays on their own. It survives a reload on
- * purpose -- a parent who sits down for the evening should not have to
- * say so again after every session -- and it is not a lock or a gate:
- * all it changes is who judges a Read it round.
+ * a parent while the other plays alone.
+ *
+ * Stored explicitly as '1' or '0', with **absent meaning on** -- see
+ * `GROWN_UP_DEFAULT`. The row therefore records a deliberate choice in
+ * either direction and persists until changed; an earlier version stored
+ * the day and expired overnight, which only made sense while the default
+ * was off.
  */
 const grownUpKey = (profileId: number) => `grownUp:${profileId}`
 
 export function setGrownUpHere(
-  db: Db, profileId: number, here: boolean, today: string,
+  db: Db, profileId: number, here: boolean,
 ): void {
-  if (here) setSetting(db, grownUpKey(profileId), today)
-  else clearSetting(db, grownUpKey(profileId))
+  setSetting(db, grownUpKey(profileId), here ? '1' : '0')
 }
 
-/**
- * True only if a grown-up said so **today**.
- *
- * The day is stored with the flag rather than a bare `1`, because a flag
- * that never expires is a flag that is wrong most of the time. Left on
- * from one evening, the next morning a child alone meets a Read it round
- * and an adult's controls -- and taps one, because a five-year-old will
- * tap a button. That promotes a word nobody heard read. A grown-up who is
- * there again says so again; it is one tap and it is the truth.
- */
-export function getGrownUpHere(db: Db, profileId: number, today: string): boolean {
-  return getSetting(db, grownUpKey(profileId)) === today
+export function getGrownUpHere(db: Db, profileId: number): boolean {
+  const raw = getSetting(db, grownUpKey(profileId))
+  return raw === null ? GROWN_UP_DEFAULT : raw === '1'
 }

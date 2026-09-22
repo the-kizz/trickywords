@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { playSessionToCelebration } from './game-helpers'
+import { playSessionToCelebration, unlockParentArea } from './game-helpers'
 
 const PIN = '1234'
 
@@ -12,10 +12,10 @@ const PIN = '1234'
  */
 test.describe.configure({ mode: 'serial' })
 
-async function unlockParentArea(page: Page, pin = PIN) {
+/** Navigates to the parent area and unlocks it. */
+async function openParentArea(page: Page, pin = PIN) {
   await page.goto('/parent', { waitUntil: 'domcontentloaded' })
-  await page.getByLabel(/enter pin/i).fill(pin)
-  await page.getByRole('button', { name: /unlock/i }).click()
+  await unlockParentArea(page, pin)
 }
 
 async function profileHref(page: Page, name: string): Promise<string> {
@@ -31,8 +31,7 @@ test.describe('family mode', () => {
     await page.getByRole('link', { name: 'Add someone' }).click()
 
     // Fresh seeded DB already has a PIN -- this is a normal unlock, not first-run setup.
-    await page.getByLabel(/enter pin/i).fill(PIN)
-    await page.getByRole('button', { name: /unlock/i }).click()
+    await unlockParentArea(page, PIN)
 
     await expect(page.getByRole('tablist', { name: /parent area sections/i })).toBeVisible()
     await page.getByLabel('Name').fill('Alex')
@@ -58,19 +57,17 @@ test.describe('family mode', () => {
 
   test('the parent PIN gate refuses a wrong PIN and accepts the right one', async ({ page }) => {
     await page.goto('/parent', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel(/enter pin/i).fill('0000')
-    await page.getByRole('button', { name: /unlock/i }).click()
+    await unlockParentArea(page, '0000')
     // Next's own route announcer also carries role="alert", so scope to
     // the PinGate's own error text rather than the bare role.
     await expect(page.getByText(/not right/i)).toBeVisible()
 
-    await page.getByLabel(/enter pin/i).fill(PIN)
-    await page.getByRole('button', { name: /unlock/i }).click()
+    await unlockParentArea(page, PIN)
     await expect(page.getByRole('tablist', { name: /parent area sections/i })).toBeVisible()
   })
 
   test('shows per-word progress and the struggling note for a seeded child', async ({ page }) => {
-    await unlockParentArea(page)
+    await openParentArea(page)
 
     const robinSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Robin', exact: true }) })
     await robinSection.getByText('Set 1 --').click()
@@ -85,7 +82,7 @@ test.describe('family mode', () => {
   })
 
   test('ticking a starting set updates the progress map', async ({ page }) => {
-    await unlockParentArea(page)
+    await openParentArea(page)
 
     const samSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Sam', exact: true }) })
     await samSection.getByText('Set starting point').click()
@@ -101,7 +98,7 @@ test.describe('family mode', () => {
   })
 
   test('deleting a profile removes it and its progress', async ({ page }) => {
-    await unlockParentArea(page)
+    await openParentArea(page)
 
     page.once('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: "Delete Alex's profile" }).click()

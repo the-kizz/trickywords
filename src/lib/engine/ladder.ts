@@ -219,3 +219,35 @@ export function decrementDue(p: WordProgress): WordProgress {
 export function isDue(p: WordProgress): boolean {
   return p.dueInSessions <= 0
 }
+
+/**
+ * What a card in a card run is worth.
+ *
+ * One implementation, because both play surfaces deal the same cards and
+ * two copies of this would drift: a fix to the family one would silently
+ * leave guest play scoring an island differently.
+ *
+ * Read unaided, and the ordinary ladder credits it -- day floor and all.
+ * Needing to be told is a miss, recorded through the same channel a
+ * wrong tap uses, or the cards could only ever push a word up and one
+ * failed every evening would still read as known.
+ *
+ * The new-word cap is deliberately not applied: it exists because a
+ * session shows a brand-new word and then asks for it, which is
+ * recognition of something just seen. An adult hearing a word read from
+ * print is not that, whatever box it is on.
+ *
+ * `dueInSessions` is carried across untouched. The review schedule
+ * belongs to the sessions, and a card run is an assessment taken outside
+ * them with no `decrementDue` pass to follow -- resetting the interval
+ * here would push these words further out every evening until they
+ * stopped coming back as review at all.
+ */
+export function recordCardRead(
+  current: WordProgress, readAlone: boolean, today: string,
+): WordProgress {
+  const scored = readAlone
+    ? recordReadToAdult(recordCorrect(current, false, today, true))
+    : recordMiss(current, false)
+  return { ...scored, dueInSessions: current.dueInSessions }
+}

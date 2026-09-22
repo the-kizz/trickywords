@@ -180,7 +180,7 @@ describe('the class marker in guest play', () => {
   it('is set on the map and kept for the visit', async () => {
     saveGuest({
       avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null,
-      schoolSetId: null, startedAt: 1,
+      schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByText(/which words are on each island/i))
@@ -192,7 +192,7 @@ describe('the class marker in guest play', () => {
   it('makes no server call and sets no cookie', async () => {
     saveGuest({
       avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null,
-      schoolSetId: null, startedAt: 1,
+      schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await userEvent.click(screen.getByText(/which words are on each island/i))
@@ -206,7 +206,7 @@ describe('the class marker in guest play', () => {
     window.history.pushState({}, '', '/play?set=7')
     saveGuest({
       avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null,
-      schoolSetId: null, startedAt: 1,
+      schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await vi.waitFor(() => expect(loadGuest().schoolSetId).toBe(7))
@@ -216,7 +216,7 @@ describe('the class marker in guest play', () => {
     window.history.pushState({}, '', '/play?set=7')
     saveGuest({
       avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null,
-      schoolSetId: 3, startedAt: 1,
+      schoolSetId: 3, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     await vi.waitFor(() => expect(loadGuest().lastSetId).toBe(7))
@@ -226,7 +226,7 @@ describe('the class marker in guest play', () => {
   it('shows it unset by default', () => {
     saveGuest({
       avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null,
-      schoolSetId: null, startedAt: 1,
+      schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(document.querySelectorAll('[data-testid^="school-mark-"]')).toHaveLength(0)

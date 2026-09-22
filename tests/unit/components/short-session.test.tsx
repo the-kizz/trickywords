@@ -36,7 +36,7 @@ function nothingDue(): Record<string, WordProgress> {
 describe('the map explains nothing about how long the go will be', () => {
   it('says nothing about a short go when nothing much is due', () => {
     saveGuest({
-      avatar: 'fox', progress: nothingDue(), bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1,
+      avatar: 'fox', progress: nothingDue(), bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.queryByTestId('short-session-note')).toBeNull()
@@ -44,7 +44,7 @@ describe('the map explains nothing about how long the go will be', () => {
   })
 
   it('says nothing about it to a fresh visitor either', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.queryByTestId('short-session-note')).toBeNull()
     expect(document.body.textContent).not.toMatch(/short go|nothing much is due/i)
@@ -53,7 +53,7 @@ describe('the map explains nothing about how long the go will be', () => {
   /** And "Mix it up" is gone: review is no longer something to ask for. */
   it('offers no "Mix it up" button anywhere', () => {
     saveGuest({
-      avatar: 'fox', progress: nothingDue(), bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1,
+      avatar: 'fox', progress: nothingDue(), bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.queryByRole('button', { name: /mix it up/i })).toBeNull()

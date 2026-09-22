@@ -2,8 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import { ADULT_TARGET_PX, MIN_TARGET_PX } from '@/lib/constants'
 import { DEFAULT_SETS } from '@/lib/words/default-sets'
 import {
-  detectRoundType, pickFirstAvatar, playSessionToCelebration, solveCurrentRound,
-} from './game-helpers'
+  detectRoundType, pickFirstAvatar, playSessionToCelebration, solveCurrentRound, unlockParentArea} from './game-helpers'
 
 /**
  * Layout claims that can only be checked by measuring a real browser:
@@ -73,8 +72,7 @@ test.describe('the absolute-positioned controls no longer collide', () => {
     test(`"Back" clears the parent-area heading at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: width < 380 ? 640 : 844 })
       await page.goto('/parent', { waitUntil: 'domcontentloaded' })
-      await page.getByLabel(/enter pin/i).fill('1234')
-      await page.getByRole('button', { name: /unlock/i }).click()
+      await unlockParentArea(page, '1234')
       await expect(page.getByRole('tablist', { name: /parent area sections/i })).toBeVisible()
 
       const back = page.getByRole('link', { name: 'Back to home' })
@@ -359,8 +357,7 @@ test.describe('the parent Word sets tab is usable on a phone', () => {
   test('no horizontal scroll and a sane height at 390px', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/parent', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel(/enter pin/i).fill('1234')
-    await page.getByRole('button', { name: /unlock/i }).click()
+    await unlockParentArea(page, '1234')
     await page.getByRole('tab', { name: 'Word sets' }).click()
 
     const save = page.getByRole('button', { name: 'Save word sets' })
@@ -405,8 +402,7 @@ test.describe('the parent Word sets tab is usable on a phone', () => {
   test('has three tabs, no Games tab, and adult-sized controls', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/parent', { waitUntil: 'domcontentloaded' })
-    await page.getByLabel(/enter pin/i).fill('1234')
-    await page.getByRole('button', { name: /unlock/i }).click()
+    await unlockParentArea(page, '1234')
 
     await expect(page.getByRole('tab')).toHaveCount(3)
     await expect(page.getByRole('tab', { name: 'Games' })).toHaveCount(0)

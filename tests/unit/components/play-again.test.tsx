@@ -51,7 +51,7 @@ function set7At(box: number, creditedOn: string | null): Record<string, WordProg
 
 async function startSet7(progress: Record<string, WordProgress>) {
   saveGuest({
-    avatar: 'fox', progress, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1,
+    avatar: 'fox', progress, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
   })
   render(<GuestHome sets={DEFAULT_SETS} />)
   await userEvent.click(screen.getByRole('button', { name: /^Set 7,/ }))

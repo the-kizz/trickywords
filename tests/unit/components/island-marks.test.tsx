@@ -174,7 +174,7 @@ describe('can you see I played?', () => {
       progress: Object.fromEntries(at(SET1, { i: 5, the: 1 })),
       bestKnown: 1,
       lastSetId: 1,
-      schoolSetId: null,
+      schoolSetId: null, grownUp: null,
       startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)

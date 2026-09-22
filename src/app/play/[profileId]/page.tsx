@@ -5,7 +5,6 @@ import { getProfile } from '@/lib/db/profiles'
 import { getLastSetId, getSchoolSetId, getGrownUpHere, loadProgress } from '@/lib/db/progress'
 import { loadWordSets } from '@/lib/words/store'
 import { FamilyPlay } from '@/components/family/FamilyPlay'
-import { dayKey } from '@/lib/engine/ladder'
 
 // Reads the profile and their progress at request time -- both can
 // change between visits and must never be baked into a static build.
@@ -48,7 +47,7 @@ export default async function FamilyPlayPage({ params }: Props) {
       bestKnown={profile.bestKnown}
       lastSetId={getLastSetId(db, id)}
       schoolSetId={getSchoolSetId(db, id)}
-      grownUpHere={getGrownUpHere(db, id, dayKey())}
+      grownUpHere={getGrownUpHere(db, id)}
     />
   )
 }

@@ -14,7 +14,7 @@ export interface GuestState {
   bestKnown: number
   /**
    * The island this visitor last played, or null if they have not played
-   * one yet -- the guest half of "where is they meant to be up to".
+   * one yet -- the guest half of "where are they meant to be up to".
    *
    * Held here rather than in React state alone because the map's sense
    * of where they are has to survive a refresh: a pull-to-refresh on a
@@ -30,11 +30,23 @@ export interface GuestState {
    * tab's sessionStorage.
    */
   schoolSetId: number | null
+  /**
+   * Whether an adult is sitting with this visitor, or null for "nobody
+   * has said" -- which reads as yes, see `GROWN_UP_DEFAULT`.
+   *
+   * Guest play has no server and no parent area, so this is set on the
+   * map beside the class picker and lives only in this tab's
+   * sessionStorage. It is the same switch the family map carries and it
+   * changes the same one thing: who judges a Read it round, and so
+   * whether a reading can move the word up the ladder.
+   */
+  grownUp: boolean | null
   startedAt: number
 }
 
 const empty = (): GuestState => ({
   avatar: null, progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null,
+  grownUp: null,
   startedAt: Date.now(),
 })
 
@@ -71,6 +83,11 @@ export function loadGuest(): GuestState {
       // better answer than any default this could invent.
       lastSetId: typeof parsed.lastSetId === 'number' ? parsed.lastSetId : null,
       schoolSetId: typeof parsed.schoolSetId === 'number' ? parsed.schoolSetId : null,
+      // Null, not `GROWN_UP_DEFAULT`, for a record written before this
+      // field existed: null *reads* as the default wherever it is used,
+      // and keeping it null means the default can change later without
+      // every stored visit carrying the old one.
+      grownUp: typeof parsed.grownUp === 'boolean' ? parsed.grownUp : null,
       startedAt: parsed.startedAt ?? Date.now(),
     }
   } catch {

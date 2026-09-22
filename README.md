@@ -117,6 +117,9 @@ switch is `TRICKYWORDS_PUBLIC` — unset, port 3001 isn't even bound.
 </p>
 <p align="center">
   <img src="docs/screenshots/06-parent-area.png" alt="The parent area, showing real per-word progress for a child" width="46%">
+  <img src="docs/screenshots/05-companion.png" alt="The companion on the island map, grown to a later stage" width="46%">
+</p>
+<p align="center">
   <img src="docs/screenshots/03-mobile.png" alt="Find it at phone width, with full-size touch targets" width="22%">
 </p>
 

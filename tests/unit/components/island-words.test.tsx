@@ -82,7 +82,7 @@ describe('the words on each island, for the adult', () => {
    * not something a parent can match against a sheet from school.
    */
   it('is the only adult word line on the map', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.getByTestId('island-words')).toBeInTheDocument()
     expect(screen.queryByTestId('session-focus')).toBeNull()

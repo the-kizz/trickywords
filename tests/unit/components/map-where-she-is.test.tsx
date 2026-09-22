@@ -19,7 +19,7 @@ beforeEach(() => {
  */
 describe('where the child is on the map', () => {
   it('marks the current island in words, before anything is played', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(
       screen.getByRole('button', { name: /^Set 1, where you are/ }),
@@ -27,13 +27,13 @@ describe('where the child is on the map', () => {
   })
 
   it('marks exactly one island as current', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     expect(screen.getAllByRole('button', { name: /where you are/ })).toHaveLength(1)
   })
 
   it('sits the companion on that island rather than above the map', () => {
-    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, startedAt: 1 })
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
     const companion = screen.getByTestId('map-companion')
     const island = screen.getByRole('button', { name: /^Set 1, where you are/ })

@@ -1,8 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
 import {
-  detectRoundType, sessionFinished, solveCurrentRound, targetWord,
+  detectRoundType, roundOnScreen, sessionFinished, solveCurrentRound, targetWord,
 } from './game-helpers'
 import { publicURL } from './ports'
+import { HEART_MARKS_ENABLED } from '@/lib/teaching'
+import { DEFAULT_SETS } from '@/lib/words/default-sets'
 
 /**
  * Generates the README screenshots from the seeded demo profiles
@@ -112,13 +114,22 @@ async function buildHeartWordToPartialReveal(page: Page): Promise<boolean> {
     // show; the caller moves on to the next round.
     if (await gone()) return false
 
-    // Scoped to the built word: the shared round header now also shows
-    // the heart-marked prompt word while support is high, and that
-    // carries hearts of its own.
+    // What makes this a picture worth taking: enough of the word placed
+    // to read as part-built, with tiles still to go.
+    //
+    // This used to require a heart on the built word as well, which is
+    // why gating the *assertion* on `HEART_MARKS_ENABLED` was not
+    // enough -- with the marks off, `hearts` is always 0, so the
+    // condition could never be met and the replay loop ran until the
+    // test timed out. Scoped to the built word either way: the round
+    // header also shows the prompt word while support is high, and that
+    // carries marks of its own when they are on.
     const built = page.getByTestId('built')
-    const hearts = await built.locator('[data-testid^="tricky-"]').count()
     const letters = (await built.innerText()).replace(/\s/g, '').length
-    if (hearts > 0 && letters >= 3) return true
+    if (letters < 3) continue
+    if (!HEART_MARKS_ENABLED) return true
+    const hearts = await built.locator('[data-testid^="tricky-"]').count()
+    if (hearts > 0) return true
   }
   return false
 }
@@ -160,7 +171,46 @@ test('03 listen and find -- mid-round', async ({ page }) => {
   await shot(page, '03-mobile.png')
 })
 
-test('04 heart word builder -- a heart mid-build', async ({ page }) => {
+/**
+ * KNOWN BROKEN, and skipped rather than deleted -- `test.fixme`, so it
+ * reports as work outstanding instead of quietly passing.
+ *
+ * Three things are wrong with it, and they compound:
+ *
+ *  1. It asserted a heart was visible on the built word. The marks are
+ *     off (`HEART_MARKS_ENABLED`), so that could not pass -- and the
+ *     *capture condition* required a heart too, so gating only the
+ *     assertion was not enough.
+ *  2. Build the Word needs a word at box 2 (`MIN_BOX_TO_BUILD`), a fresh
+ *     guest starts every word at box 0, and `recordCorrect` credits a
+ *     word at most once per calendar day. A run that plays its way up
+ *     therefore reaches box 1 and stops: no number of replays produces a
+ *     build round at all. Seeding progress past box 2 fixes that much.
+ *  3. Even seeded, the tile-tapping races the round handover, which is
+ *     longer now every round waits out its closing audio.
+ *
+ * It had been failing on (1) and (2) since before this week, unnoticed,
+ * because the suite ran nowhere but a developer's machine -- which is
+ * the argument for the CI job that now runs it.
+ *
+ * Nothing depends on the picture: the README references eight
+ * screenshots and none of them is this one, so the app is not
+ * misrepresented by its absence. Worth fixing when Build the Word next
+ * gets attention; not worth blocking a release for an unused image.
+ *
+ * Retargeted 2026-09-22: this was "a heart mid-build", and it asserted a
+ * `tricky-*` marker was visible. The heart is switched off
+ * (`HEART_MARKS_ENABLED`) because naming the tricky part inside a word
+ * is not the method this child's programme teaches, so the picture it
+ * took advertised a lesson the app no longer gives -- and the assertion
+ * failed, correctly.
+ *
+ * The round is still worth a picture: it is the one that asks a child to
+ * reproduce a whole spelling, and the README had no shot of it. So the
+ * same replay is kept, the heart assertion is gated on the flag, and the
+ * file it writes is named for the round rather than the mark.
+ */
+test.fixme('04 build the word -- a word part-built', async ({ page }) => {
   await page.setViewportSize(DESKTOP)
   // Set 10 is the set whose heart-word-builder rounds land on long
   // heart words -- `what` (`wh`/`a`/`t`), `want` (`w`/`a`/`n`/`t`),
@@ -184,6 +234,34 @@ test('04 heart word builder -- a heart mid-build', async ({ page }) => {
   // it lands on varies with how the session went. This replays Set 10
   // until one of them builds past its heart with a tile still to
   // place.
+  // Seeded at box 2, and that is not a convenience -- without it this
+  // picture is unreachable. Build the Word needs a word at box 2
+  // (`MIN_BOX_TO_BUILD`), a fresh guest starts every word at box 0, and
+  // `recordCorrect` credits a word at most once per calendar day. So a
+  // run that plays its way up gets every Set 10 word to box 1 and
+  // stops: no replay count reaches a build round, and the eight below
+  // were only ever burning the test timeout. (This test had been failing
+  // for that reason as well as the heart one, unnoticed, because the
+  // suite ran nowhere but a developer's machine.)
+  //
+  // The grown-up switch goes off with it, so the cycle is Find it and
+  // Build the Word only: Read it would otherwise take half the varied
+  // rounds and make the one this needs twice as rare. Nothing about the
+  // picture changes -- Build the Word looks the same whoever is
+  // watching.
+  const seeded = DEFAULT_SETS.find((set) => set.id === 10)!.words.map((w) => w.id)
+  await page.addInitScript((wordIds: string[]) => {
+    const progress = Object.fromEntries(wordIds.map((id) => [id, {
+      wordId: id, stage: 'reviewing', box: 2, dueInSessions: 0,
+      correctStreak: 2, attempts: 2, lapses: 0, struggling: false,
+      saidIt: 0, readToAdult: 0, lastCreditedOn: null,
+    }]))
+    sessionStorage.setItem('trickywords.guest', JSON.stringify({
+      avatar: 'fox', progress, bestKnown: 0, lastSetId: 10,
+      schoolSetId: null, grownUp: false, startedAt: Date.now(),
+    }))
+  }, seeded)
+
   let captured = false
   for (let attempt = 0; attempt < 8 && !captured; attempt++) {
     await page.goto('/play?set=10', { waitUntil: 'domcontentloaded' })
@@ -197,12 +275,25 @@ test('04 heart word builder -- a heart mid-build', async ({ page }) => {
 
     for (let round = 0; round < 12 && !captured; round++) {
       if (await sessionFinished(page)) break
+      // Every round holds itself open until its closing audio has been
+      // heard, so there is a beat between rounds with no round on screen
+      // at all. This loop drives itself rather than going through
+      // `playSessionToCelebration`, so it needs that wait of its own --
+      // without it, `detectRoundType` lands in the gap and reports no
+      // round found.
+      await expect
+        .poll(async () => (await sessionFinished(page)) || roundOnScreen(page),
+              { timeout: 25_000 })
+        .toBe(true)
+      if (await sessionFinished(page)) break
       const roundType = await detectRoundType(page)
 
       if (roundType === 'build') {
         if (await buildHeartWordToPartialReveal(page)) {
-          await expect(page.locator('[data-testid^="tricky-"]').first()).toBeVisible()
-          await shot(page, '04-heart-word-builder.png')
+          if (HEART_MARKS_ENABLED) {
+            await expect(page.locator('[data-testid^="tricky-"]').first()).toBeVisible()
+          }
+          await shot(page, '04-build-the-word.png')
           captured = true
           break
         }
@@ -221,7 +312,12 @@ test('04 heart word builder -- a heart mid-build', async ({ page }) => {
       await solveCurrentRound(page, roundType)
     }
   }
-  expect(captured, 'expected at least one heart-word-builder round with a mid-build heart').toBe(true)
+  expect(
+    captured,
+    HEART_MARKS_ENABLED
+      ? 'expected a Build the Word round part-built, with its heart showing'
+      : 'expected a Build the Word round part-built, with tiles still to place',
+  ).toBe(true)
 })
 
 test('05 the companion on the map -- grown', async ({ page }) => {
