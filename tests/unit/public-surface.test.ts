@@ -7,6 +7,7 @@ import {
   PUBLIC_ENTRY_PATH,
   PUBLIC_SURFACE,
   SURFACE_HEADER,
+  OG_IMAGE_PATH,
 } from '@/lib/public-surface.mts'
 
 /**
@@ -21,7 +22,7 @@ describe('isPubliclyAllowed — allowed paths', () => {
     '/api/health',
     '/favicon.ico',
     '/_next/image',
-    '/og-card.png',
+    OG_IMAGE_PATH,
     '/favicon.svg',
     '/manifest.webmanifest',
     '/icons/app-icon-180.png',
@@ -102,12 +103,17 @@ describe('isPubliclyAllowed — allowed paths', () => {
   })
 
   it('allows the Open Graph card image, and only that exact path -- not a new wildcard', () => {
-    expect(isPubliclyAllowed('/og-card.png')).toBe(true)
+    // Asserted through the constant the root layout also uses, so a card
+    // moved in one place and not the other fails here rather than
+    // silently 404ing to every scraper.
+    expect(isPubliclyAllowed(OG_IMAGE_PATH)).toBe(true)
     // Confirms this was added as a narrow exact entry, not a prefix:
-    // neighbouring and nested paths stay denied.
-    expect(isPubliclyAllowed('/og-card2.png')).toBe(false)
-    expect(isPubliclyAllowed('/og-card.png/x')).toBe(false)
-    expect(isPubliclyAllowed('/og/card.png')).toBe(false)
+    // neighbouring and nested paths stay denied. `/og/` in particular is
+    // now a real directory holding an alternate cut nothing references.
+    expect(isPubliclyAllowed('/og/og-card-1200x630.jpg')).toBe(false)
+    expect(isPubliclyAllowed('/og/og-card-1200x630-wordmark-only.png')).toBe(false)
+    expect(isPubliclyAllowed(`${OG_IMAGE_PATH}/x`)).toBe(false)
+    expect(isPubliclyAllowed('/og/')).toBe(false)
     expect(isPubliclyAllowed('/parent-og-card.png')).toBe(false)
   })
 
@@ -489,7 +495,7 @@ describe('publicRedirectLocation', () => {
       expect(publicRedirectLocation(path), path).toBeNull()
     }
     // ...and none of the existing allowances.
-    for (const path of ['/play', '/api/health', '/favicon.ico', '/audio/said.mp3', '/og-card.png']) {
+    for (const path of ['/play', '/api/health', '/favicon.ico', '/audio/said.mp3', OG_IMAGE_PATH]) {
       expect(isPubliclyAllowed(path), path).toBe(true)
     }
     // Nor does adding the artwork open any part of the family side: the

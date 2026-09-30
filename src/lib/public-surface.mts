@@ -36,6 +36,19 @@ export const PUBLIC_SURFACE = 'public'
  * `/play/<profileId>` is deliberately absent: that is the family route
  * for one named child, and an exact match cannot reach it.
  */
+/**
+ * The Open Graph / Twitter card image.
+ *
+ * Declared here, beside the allowlist that has to permit it, and
+ * imported by the root layout rather than the reverse -- this module
+ * imports nothing (see above) and must keep doing so. One constant, so
+ * the meta tag and the allowlist cannot drift apart: this list is
+ * deny-by-default, so a card moved in one place and not the other serves
+ * a 404 to every scraper on the one surface whose whole purpose is being
+ * shared, and nothing would fail loudly.
+ */
+export const OG_IMAGE_PATH = '/og/og-card-1200x630.png'
+
 const ALLOWED_EXACT: ReadonlySet<string> = new Set([
   '/play',
   '/api/health',
@@ -44,7 +57,9 @@ const ALLOWED_EXACT: ReadonlySet<string> = new Set([
   // The Open Graph / Twitter card image. A shared guest link (the whole
   // point of the guest surface) has no link preview without it, so this
   // is an exact path added narrowly rather than a new wildcard prefix.
-  '/og-card.png',
+  //
+  // Moved from `/og-card.png` when the card became a designed asset.
+  OG_IMAGE_PATH,
 
   // Brand and icon assets, each named exactly because each is actually
   // requested by the guest page -- not a `/brand/` or `/icons/` prefix,

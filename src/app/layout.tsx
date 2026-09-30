@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { resolveSiteUrl } from "@/lib/site-url";
+import { OG_IMAGE_PATH } from "@/lib/public-surface.mts";
 
 const TITLE = "Tricky Words";
 const DESCRIPTION = "A gentle, self-hosted sight words app for children aged 5-7.";
-// Describes the card at `public/og-card.png`. Kept in step with the
-// image: the wording has been wrong twice, once describing a
-// placeholder card and once promising seven games, and the card is the
-// first thing anyone sees when the link is shared.
+// Describes the card at `public/og/og-card-1200x630.png`. Kept in step
+// with the image: the wording has been wrong three times now -- once
+// describing a placeholder, once promising seven games, once still
+// describing the card before this one -- and it is the first thing
+// anyone sees when the link is shared.
+//
+// "Get tricky" is the tagline mark, used on outward-facing surfaces
+// only. The app's name is still Tricky Words, which is why the card
+// carries both and why `TITLE` is unchanged.
 const OG_IMAGE_ALT =
-  'Tricky Words — the word "said" on a large white card, above the line '
-  + '"Sight words for five- to seven-year-olds".';
+  'Get tricky — Tricky Words. A round blue character rides a skateboard '
+  + 'mid-kickflip beside the words.';
 
 const siteUrl = resolveSiteUrl(process.env);
 
@@ -22,14 +28,24 @@ const siteUrl = resolveSiteUrl(process.env);
  * `metadataBase` is set it falls back to `http://localhost:${PORT}` --
  * which, in this container, is the loopback app port nothing outside
  * can reach, i.e. exactly the "broken absolute URL" this must avoid.
- * `/og-card.png` (a genuinely relative path, no scheme) is rendered as
- * a plain `<meta>` tag below instead, which React 19 hoists into
- * `<head>` on its own. A relative `og:image` resolves correctly against
- * the actual page URL a scraper already has -- no configuration needed
- * -- and `TRICKYWORDS_SITE_URL`, when set, upgrades it to a real
- * absolute URL for scrapers that need one.
+ * The path (a genuinely relative one, no scheme) is rendered as a plain
+ * `<meta>` tag below instead, which React 19 hoists into `<head>` on its
+ * own. A relative `og:image` resolves correctly against the actual page
+ * URL a scraper already has -- no configuration needed -- and
+ * `TRICKYWORDS_SITE_URL`, when set, upgrades it to a real absolute URL
+ * for scrapers that need one.
+ *
+ * A designed asset, not a generated one. There was a script that built
+ * this card by screenshotting an HTML page; it was deleted along with
+ * the card it made, because leaving it in place meant one `npx tsx` away
+ * from silently overwriting the real artwork. The alternate
+ * wordmark-only cut sits beside this one and is not referenced.
+ *
+ * The path itself comes from `public-surface.mts`, where the guest
+ * allowlist that has to permit it also lives -- one constant, so the two
+ * cannot drift.
  */
-const ogImageUrl = siteUrl ? new URL("/og-card.png", siteUrl).toString() : "/og-card.png";
+const ogImageUrl = siteUrl ? new URL(OG_IMAGE_PATH, siteUrl).toString() : OG_IMAGE_PATH;
 
 export const metadata: Metadata = {
   title: TITLE,
