@@ -132,7 +132,7 @@ describe('Read it, with a grown-up watching', () => {
     const onMiss = vi.fn()
     renderRound(true, { onAnswer, onRead, onMiss })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Tell them the word' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Say the word for them' }))
     expect(played.join(' ')).toContain(wordAudioUrl(said.audioId))
     expect(onRead).not.toHaveBeenCalled()
     // Recorded as a miss: the adult path must be able to cost a word

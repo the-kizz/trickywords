@@ -23,7 +23,7 @@ import type { Word } from '@/lib/words/types'
  * So: no rounds, no budget, no rotation, no reward. Every word on the
  * island in turn, the word alone with no sound, and two adult controls.
  * It is the same judgement a Read it round asks for and it is recorded
- * the same way -- "They read it" is unaided and promotes, "Tell them"
+ * the same way -- "They read it" is unaided and promotes, "Say it for them"
  * speaks the word and does not. The ordinary day floor still applies, so
  * going through the cards twice in an evening cannot run a word up the
  * ladder.
@@ -118,7 +118,7 @@ export function CardRun({ words, onRead, onDone }: Props) {
 
       <div className="flex flex-wrap justify-center gap-4">
         <AdultButton label="They read it" primary onPress={() => answer(true)} />
-        <AdultButton label="Tell them" ariaLabel="Tell them the word" onPress={() => answer(false)} />
+        <AdultButton label="Say it for them" ariaLabel="Say the word for them" onPress={() => answer(false)} />
       </div>
     </div>
   )

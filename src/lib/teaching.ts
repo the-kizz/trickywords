@@ -64,7 +64,8 @@ export const READ_ROUND_ENABLED = true
  * is worth. Off, the child judges herself: recorded, never promoting,
  * and Read it stays out of the rotation altogether (see `roundCycleFor`)
  * because a self-report cannot be evidence. On, the grown-up judges:
- * "They read it" promotes on the ordinary ladder and "Tell them" records
+ * "They read it" promotes on the ordinary ladder and "Say it for them"
+ * records
  * a miss -- the school's own assessment, done at the kitchen table.
  *
  * It was briefly on by default, on the reasoning that this household

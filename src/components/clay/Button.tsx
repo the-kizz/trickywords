@@ -9,6 +9,11 @@ interface Props {
   icon?: boolean
   tone?: 'primary' | 'play' | 'fun'
   onPress: () => void
+  /**
+   * Present but not yet live: rendered at full size so nothing moves
+   * when it wakes, dimmed, and inert to taps and to the tap animation.
+   */
+  disabled?: boolean
   children?: ReactNode
 }
 
@@ -19,20 +24,22 @@ const TONES = {
 } as const
 
 export function ClayButton({
-  label, ariaLabel, icon, tone = 'primary', onPress, children,
+  label, ariaLabel, icon, tone = 'primary', onPress, disabled = false, children,
 }: Props) {
   return (
     <motion.button
       type="button"
       aria-label={ariaLabel ?? label}
       onClick={onPress}
-      whileTap={{ scale: 0.95 }}
+      disabled={disabled}
+      whileTap={disabled ? undefined : { scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 400, damping: 22 }}
       style={{ minWidth: MIN_TARGET_PX, minHeight: MIN_TARGET_PX }}
       className={`${TONES[tone]} rounded-clay shadow-clay px-6 py-4
         text-[clamp(1.25rem,2.4vw,1.75rem)] font-bold cursor-pointer select-none
         focus-visible:outline-4 focus-visible:outline-offset-4
-        focus-visible:outline-fun`}
+        focus-visible:outline-fun
+        disabled:opacity-40 disabled:cursor-default disabled:pointer-events-none`}
     >
       {children ?? (icon ? null : label)}
     </motion.button>

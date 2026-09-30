@@ -164,6 +164,7 @@ test('03 listen and find -- mid-round', async ({ page }) => {
     await page.waitForTimeout(150)
   }
   await expect(page.getByTestId('choices')).toBeVisible()
+  await expect(page.getByTestId('choices').getByRole('button').first()).toBeEnabled({ timeout: 15_000 })
   expect(await detectRoundType(page)).toBe('find')
   await shot(page, '03-listen-and-find.png')
 

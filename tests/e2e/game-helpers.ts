@@ -176,6 +176,10 @@ export async function awaitRoundSettled(page: Page): Promise<void> {
 async function tapTargetWord(page: Page): Promise<void> {
   const target = await targetWord(page)
   const buttons = page.getByTestId(ROUND_TESTID.find).getByRole('button')
+  // The tiles are on screen from the top of the round, blank and inert
+  // until the word has been shown and taken away; a forced click on one
+  // of those lands on nothing.
+  await expect(buttons.first()).toBeEnabled({ timeout: 15_000 })
   const count = await buttons.count()
   for (let i = 0; i < count; i++) {
     const name = (await buttons.nth(i).getAttribute('aria-label')) ?? ''

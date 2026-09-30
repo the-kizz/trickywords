@@ -42,7 +42,7 @@ export function GrownUpToggle(
         A grown-up is here
         <span className="block font-normal text-xs">
           {here
-            ? 'You’ll be asked whether they read each word.'
+            ? 'In Read it rounds you judge: tap They read it, or Say it for them.'
             : 'Turn this on to listen to them read and have it count.'}
         </span>
       </span>

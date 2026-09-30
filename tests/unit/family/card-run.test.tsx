@@ -40,7 +40,7 @@ describe('going through the cards', () => {
 
   it('is the adult who answers, at an adult size', () => {
     run()
-    for (const name of ['They read it', 'Tell them the word']) {
+    for (const name of ['They read it', 'Say the word for them']) {
       expect(screen.getByRole('button', { name }).style.minHeight)
         .toBe(`${ADULT_TARGET_PX}px`)
     }
@@ -54,7 +54,7 @@ describe('going through the cards', () => {
     expect(onRead.mock.calls[0][1]).toBe(true)
     expect(screen.getByText(`Card 2 of ${SET.words.length}`)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Tell them the word' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Say the word for them' }))
     expect(onRead.mock.calls[1][1]).toBe(false)
     // Telling them means they hear it -- that is what telling them is.
     expect(played.join(' ')).toContain(wordAudioUrl(onRead.mock.calls[1][0].audioId))
@@ -64,7 +64,7 @@ describe('going through the cards', () => {
     run()
     for (let i = 0; i < SET.words.length; i++) {
       await userEvent.click(screen.getByRole('button', {
-        name: i === 0 ? 'Tell them the word' : 'They read it',
+        name: i === 0 ? 'Say the word for them' : 'They read it',
       }))
     }
     expect(screen.getByTestId('card-run-done')).toBeInTheDocument()

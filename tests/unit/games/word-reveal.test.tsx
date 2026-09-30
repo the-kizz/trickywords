@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ROUND_TYPES, type RoundType } from '@/components/games'
 import { ListenAndFind } from '@/components/games/ListenAndFind'
@@ -89,14 +89,22 @@ describe('the word is shown, spoken, hidden, and only then asked for', () => {
   it('opens on the written word with nothing to tap', () => {
     render(<ListenAndFind round={boxZero()} onAnswer={() => {}} onMiss={() => {}} />)
     expect(screen.getByTestId('prompt-word')).toHaveTextContent(said.text)
-    expect(screen.queryByTestId('choices')).toBeNull()
+    // The tiles are on screen so the wait reads as a wait, but every one
+    // is inert -- and blank, so the written word has no twin to match
+    // among them.
+    const tiles = screen.getByTestId('choices')
+    for (const b of within(tiles).getAllByRole('button')) expect(b).toBeDisabled()
+    // The word is drawn grapheme by grapheme, so look at every text node.
+    for (const t of within(tiles).queryAllByText(/\S/)) expect(t).not.toBeVisible()
+    expect(within(tiles).queryAllByText(/\S/).length).toBeGreaterThan(0)
   })
 
   it('takes the word away before the choices arrive', () => {
     render(<ListenAndFind round={boxZero()} onAnswer={() => {}} onMiss={() => {}} />)
     playOutReveal()
     expect(screen.queryByTestId('prompt-word')).toBeNull()
-    expect(screen.getByTestId('choices')).toBeInTheDocument()
+    for (const b of within(screen.getByTestId('choices')).getAllByRole('button')) expect(b).toBeEnabled()
+    expect(screen.getByTestId('choices')).toHaveTextContent(said.text)
   })
 
   /**
@@ -110,7 +118,7 @@ describe('the word is shown, spoken, hidden, and only then asked for', () => {
     const upFor = spokenMs('findTheWord', said.audioId)
     advance(upFor - 50)
     expect(screen.getByTestId('prompt-word')).toBeInTheDocument()
-    expect(screen.queryByTestId('choices')).toBeNull()
+    for (const b of within(screen.getByTestId('choices')).getAllByRole('button')) expect(b).toBeDisabled()
     advance(50 + REVEAL_FADE_MS + 10)
     expect(screen.queryByTestId('prompt-word')).toBeNull()
   })
@@ -168,7 +176,15 @@ describe.each(Object.entries(ROUND_TYPES))('round type: %s', (id, Game) => {
   it('never shows the written word beside the things the child taps', () => {
     render(<Game round={boxZero()} onAnswer={() => {}} onMiss={() => {}} />)
     const wordUp = screen.queryByTestId('prompt-word') !== null
-    if (wordUp) expect(screen.queryByTestId(tappable)).toBeNull()
+    if (wordUp) {
+      // Either not there yet, or there as blank inert placeholders --
+      // never a live tile with a word on it beside the written word.
+      const early = screen.queryByTestId(tappable)
+      if (early) {
+        for (const b of within(early).getAllByRole('button')) expect(b).toBeDisabled()
+        for (const t of within(early).queryAllByText(/\S/)) expect(t).not.toBeVisible()
+      }
+    }
     playOutReveal()
     expect(screen.queryByTestId('prompt-word')).toBeNull()
     expect(screen.getByTestId(tappable)).toBeInTheDocument()

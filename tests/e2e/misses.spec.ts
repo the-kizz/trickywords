@@ -57,6 +57,10 @@ test('a wrong tap is recorded, and shows the child nothing', async ({ page }) =>
   const markerBefore = await roundMarker(page)
 
   const choices = page.getByTestId(ROUND_TESTID.find).getByRole('button')
+  // The tiles are on screen blank and inert until the word has been shown
+  // and taken away; a forced tap on one of those is not a miss, it is
+  // nothing.
+  await expect(choices.first()).toBeEnabled({ timeout: 15_000 })
 
   // The one button that is visibly not the word that was called.
   let wrong = null

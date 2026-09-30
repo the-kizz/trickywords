@@ -100,7 +100,7 @@ export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
   }
 
   function choose(id: string) {
-    if (closing !== 'asking') return
+    if (!asking || closing !== 'asking') return
     if (id === round.word.id) {
       answeredPrompted.current = prompted
       praiseEndsAt.current = Date.now() + say('wellDone')
@@ -157,15 +157,34 @@ export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
         than listening and always works; a beat after it, the tap is a
         small act of memory.
 
+        But the wait is four seconds on a box-0 word, and for a parent
+        watching it was four seconds of "is something missing up there?"
+        -- an instruction, a speaker, a word that appears and vanishes,
+        and nothing to tap. So the tiles are on screen from the start:
+        full size, dimmed, inert, and *blank*. Blank is the part that
+        matters. Dimmed tiles with the words on them would put `said`
+        back beside the written `said`, and the shape match would be
+        back with them; a child could find it while the word was still
+        up and tap it the instant they woke. Empty clay shapes say only
+        "these are coming", which is all the screen needed to say.
+
         They go once the answer is in, so the closing moment has the
         screen to itself and a second tap cannot land on a round that is
         already over.
       */}
-      {asking && closing === 'asking' && (
-        <div data-testid="choices" className="flex flex-wrap justify-center gap-6">
+      {closing === 'asking' && (
+        <div data-testid="choices" aria-busy={!asking} className="flex flex-wrap justify-center gap-6">
           {choices.map((w) => (
-            <ClayButton key={w.id} tone="primary" ariaLabel={w.text} onPress={() => choose(w.id)}>
-              <WordTile word={w} size="lg" />
+            <ClayButton
+              key={w.id}
+              tone="primary"
+              ariaLabel={w.text}
+              disabled={!asking}
+              onPress={() => choose(w.id)}
+            >
+              <span style={{ visibility: asking ? undefined : 'hidden' }}>
+                <WordTile word={w} size="lg" />
+              </span>
             </ClayButton>
           ))}
         </div>

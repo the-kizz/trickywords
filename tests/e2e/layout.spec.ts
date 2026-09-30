@@ -255,6 +255,7 @@ test.describe('a child can leave a running session', () => {
       // arrive once it has been said and has faded.
       await expect(page.getByTestId('choices')).toBeVisible()
       const answers = page.getByTestId('choices').getByRole('button')
+      await expect(answers.first()).toBeEnabled({ timeout: 15_000 })
       let nearest = Number.POSITIVE_INFINITY
       for (let i = 0; i < (await answers.count()); i++) {
         const box = (await answers.nth(i).boundingBox())!

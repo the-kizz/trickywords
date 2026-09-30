@@ -51,7 +51,7 @@ const ADULT_PANEL = `flex flex-col gap-3 w-full max-w-md rounded-clay border-2 b
  *  - **With a grown-up**, the grown-up judges, from adult-sized controls
  *    worded for an adult. That *is* evidence -- it is the school's own
  *    assessment, done at the kitchen table -- so "They read it" resolves
- *    unaided and promotes like any other round, and "Tell them" speaks
+ *    unaided and promotes like any other round, and "Say it for them" speaks
  *    the word and resolves prompted, exactly as a hint does elsewhere.
  *
  * Then the second half of the school's routine, which only happens with
@@ -194,7 +194,7 @@ export function ReadIt({ round, onAnswer, onMiss, onRead }: GameProps) {
           <p className="leading-normal">Did they read it on their own?</p>
           <div className="flex flex-wrap gap-4">
             <AdultButton label="They read it" primary onPress={() => adultConfirmed(true)} />
-            <AdultButton label="Tell them" ariaLabel="Tell them the word" onPress={() => adultConfirmed(false)} />
+            <AdultButton label="Say it for them" ariaLabel="Say the word for them" onPress={() => adultConfirmed(false)} />
           </div>
         </div>
       ) : (

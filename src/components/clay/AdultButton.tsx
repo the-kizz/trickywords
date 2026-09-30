@@ -13,9 +13,13 @@ import { ADULT_TARGET_PX } from '@/lib/constants'
  * the border, not the fill.
  *
  * Shared by Read it and the card run because they are the same judgement
- * -- "They read it" / "Tell them" -- a minute apart, and for a while they
+ * -- "They read it" / "Say it for them" -- a minute apart, and for a while they
  * wore two visual languages: the card run's filled blue against Read
  * it's outline. Same words, same weight, same button.
+ *
+ * The second label was "Tell them" for a while, which promised that the
+ * parent would. What happens is that the app says the word -- the tap
+ * plays it -- so the label now says what the tap does.
  */
 export function AdultButton(
   { label, ariaLabel, primary, onPress }: {
