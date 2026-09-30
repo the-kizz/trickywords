@@ -104,8 +104,10 @@ switch is `TRICKYWORDS_PUBLIC` — unset, port 3001 isn't even bound.
   gives.
 - **A switchable guest surface** — the same rounds and the same
   twelve bundled word sets, served with no name, no cookies, and no
-  parent area, for anyone to use without creating an account or leaving
-  a trace.
+  parent area, for anyone to use without creating an account. Progress
+  stays in the browser on that device and nothing leaves it; an adult
+  can say which sets a child already knows so play starts at the right
+  level, and "Start again" hands the device to the next child.
 
 <p align="center">
   <img src="docs/screenshots/02-progress-map.png" alt="The progress map: a winding island path of twelve word sets, with the companion standing on the island being played" width="46%">

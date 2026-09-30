@@ -58,22 +58,22 @@ test.describe('public mode', () => {
     }
   })
 
-  test('keeps guest progress per tab and clears it on Start again', async ({ page }) => {
+  test('keeps guest progress on the device and clears it on Start again', async ({ page }) => {
     await page.goto('/play', { waitUntil: 'domcontentloaded' })
     await expect(page.getByTestId(/^avatar-/).first()).toBeVisible()
     await pickFirstAvatar(page)
-    expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+    expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
       .not.toBeNull()
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     // A fumbled pull-to-refresh must not wipe a child's game.
-    expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+    expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
       .not.toBeNull()
 
     // Two taps, not one -- see the placement suite below.
     await page.getByTestId('start-again-ask').click()
     await page.getByTestId('start-again-confirm').click()
-    expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+    expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
       .toBeNull()
   })
 
@@ -109,7 +109,7 @@ test.describe('public mode', () => {
       await page.setViewportSize({ width: 390, height: 844 })
       await page.goto('/play', { waitUntil: 'domcontentloaded' })
       await pickFirstAvatar(page)
-      const before = await page.evaluate(() => sessionStorage.getItem('trickywords.guest'))
+      const before = await page.evaluate(() => localStorage.getItem('trickywords.guest'))
       expect(before).not.toBeNull()
 
       const ask = page.getByTestId('start-again-ask')
@@ -119,7 +119,7 @@ test.describe('public mode', () => {
       await ask.click()
 
       // The single tap changed nothing.
-      expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+      expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
         .toBe(before)
       const confirm = page.getByTestId('start-again-confirm')
       await expect(confirm).toBeVisible()
@@ -129,14 +129,14 @@ test.describe('public mode', () => {
 
       // Changing their mind keeps everything, too.
       await page.getByTestId('start-again-cancel').click()
-      expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+      expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
         .toBe(before)
       await expect(page.getByTestId('start-again-ask')).toBeVisible()
 
       // And the second tap, when it is meant, does the job.
       await page.getByTestId('start-again-ask').click()
       await page.getByTestId('start-again-confirm').click()
-      expect(await page.evaluate(() => sessionStorage.getItem('trickywords.guest')))
+      expect(await page.evaluate(() => localStorage.getItem('trickywords.guest')))
         .toBeNull()
       await expect(page.getByTestId(/^avatar-/).first()).toBeVisible()
     })
@@ -156,16 +156,25 @@ test.describe('public mode', () => {
     })
   })
 
-  test('gives two tabs independent progress, so guests never collide', async ({ context }) => {
+  /**
+   * The claim used to be per-tab isolation, and this test asserted that
+   * a second tab saw nothing. That was sessionStorage, and it meant every
+   * visit to the public page began at box 0 -- so difficulty never rose
+   * and Read it could never appear. Progress is now one record per
+   * device, and what this asserts is the half of the old promise that
+   * still matters: closing the tab does not lose the game.
+   */
+  test("keeps a guest's progress across closing and reopening the tab", async ({ context }) => {
     const a = await context.newPage()
-    const b = await context.newPage()
     await a.goto('/play', { waitUntil: 'domcontentloaded' })
-    await b.goto('/play', { waitUntil: 'domcontentloaded' })
     await pickFirstAvatar(a)
-    // The claim is per-tab isolation, so both halves matter: tab A did
-    // record something, and tab B still has not.
-    expect(await a.evaluate(() => sessionStorage.getItem('trickywords.guest'))).not.toBeNull()
-    expect(await b.evaluate(() => sessionStorage.getItem('trickywords.guest'))).toBeNull()
+    const stored = await a.evaluate(() => localStorage.getItem('trickywords.guest'))
+    expect(stored).not.toBeNull()
+    await a.close()
+
+    const b = await context.newPage()
+    await b.goto('/play', { waitUntil: 'domcontentloaded' })
+    expect(await b.evaluate(() => localStorage.getItem('trickywords.guest'))).toBe(stored)
   })
 
   test('sets no cookies across a full guest play session', async ({ page, context }) => {

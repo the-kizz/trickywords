@@ -13,13 +13,13 @@ import type { WordProgress } from '@/lib/engine/types'
  * find out that anything was recorded.
  *
  * Driven on the guest surface on purpose: its progress lives in
- * sessionStorage, so the miss can be read back out of the very record
+ * localStorage, so the miss can be read back out of the very record
  * the app keeps, with no server state to seed or clean up, and the
  * assertions cannot pass by accident off a stale database row.
  */
 
 async function guestProgress(page: Page): Promise<Record<string, WordProgress>> {
-  const raw = await page.evaluate((key) => sessionStorage.getItem(key), GUEST_KEY)
+  const raw = await page.evaluate((key) => localStorage.getItem(key), GUEST_KEY)
   return raw ? (JSON.parse(raw).progress ?? {}) : {}
 }
 

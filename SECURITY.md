@@ -177,9 +177,11 @@ Lesser, related points, for completeness:
   `restart: unless-stopped`.
 - The guest surface makes no database *writes*, but it is served by a
   process that can.
-- Guest progress lives in the browser's `sessionStorage`, per tab, and
-  is gone when the tab closes. No cookies are set and no external
-  requests are made — both proven in
+- Guest progress lives in the browser's `localStorage`, on that device
+  only, and never leaves it: it is not a cookie, it is not sent with
+  any request, and the server never sees it. "Start again" on the map
+  removes it. No cookies are set and no external requests are made —
+  both proven in
   [`tests/e2e/public-mode.spec.ts`](tests/e2e/public-mode.spec.ts).
 
 ## What the parent PIN is (and is not)

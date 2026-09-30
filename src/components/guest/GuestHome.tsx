@@ -4,6 +4,8 @@ import { ADULT_TARGET_PX, MIN_TARGET_PX } from '@/lib/constants'
 import { Avatar, AVATAR_IDS, AVATAR_LABELS } from '@/components/avatar/Avatar'
 import { Wordmark } from '@/components/brand/Wordmark'
 import { loadGuest, saveGuest, clearGuest, type GuestState } from '@/lib/guest/store'
+import { StartingPointPicker } from '@/components/map/StartingPointPicker'
+import { seedProgressForSignedOffSets } from '@/lib/parent/starting-point'
 import { ProgressMap } from '@/components/map/ProgressMap'
 import { SessionRunner } from '@/components/SessionRunner'
 import { sessionPool } from '@/lib/engine/session'
@@ -28,7 +30,7 @@ interface Props {
 
 type View = 'avatar' | 'map' | 'session' | 'cards'
 
-const HONESTY_LINE = 'Your progress stays on this device, just for this visit.'
+const HONESTY_LINE = 'Your progress stays on this device.'
 
 function progressToMap(progress: GuestState['progress']): Map<string, WordProgress> {
   return new Map(Object.entries(progress))
@@ -53,12 +55,17 @@ function readSetParam(sets: WordSet[]): number | null {
  * The public entry point to the app, and also usable from family mode.
  *
  * Never asks a child anything in text -- avatar choice only. State
- * lives only in sessionStorage via `loadGuest`/`saveGuest`/`clearGuest`;
+ * lives on this device via `loadGuest`/`saveGuest`/`clearGuest`;
  * nothing here ever calls the server.
  */
 export function GuestHome({ sets }: Props) {
   const { speakSequence } = useAudio()
   const [guest, setGuest] = useState<GuestState>(() => loadGuest())
+  // A returning child lands on the map -- the record on this device
+  // remembers their friend along with everything else. Children do like
+  // to pick a different friend each time, so the friend on the map is a
+  // button back to the picker, and picking again keeps the record: the
+  // friend is a costume, not the key. See `loadGuest`.
   const [view, setView] = useState<View>(() => (loadGuest().avatar ? 'map' : 'avatar'))
   const [sessionWords, setSessionWords] = useState<Word[] | null>(null)
   /** Which go of this sitting is running -- see `playAgain`. */
@@ -154,9 +161,48 @@ export function GuestHome({ sets }: Props) {
   }, [view, speakSequence])
 
   function pickAvatar(id: string) {
+    // A new costume over the same record -- nothing learned is touched.
     persist({ ...guest, avatar: id })
     setView('map')
   }
+
+  /**
+   * "Already knows sets up to N": an adult saying where this child is.
+   *
+   * The same seeding the parent area does, with one difference: a word
+   * that already has progress is left exactly as it is. The family
+   * version overwrites, which can erase a `struggling` flag on a word a
+   * child is genuinely struggling with; here only words never yet met
+   * are marked known. The map then lands on the set after N, which is
+   * where a child who knows sets 1-N should be.
+   */
+  function setStartingPoint(upToSetId: number | null) {
+    if (upToSetId === null) return
+    const done = sets.filter((s) => s.id <= upToSetId).map((s) => s.id)
+    const seeded = seedProgressForSignedOffSets(sets, done)
+    const progress = { ...guest.progress }
+    for (const [id, p] of seeded) if (!(id in progress)) progress[id] = p
+    const known = Object.values(progress).filter((p) => p.stage === 'known').length
+    const next = sets.find((s) => s.id > upToSetId)
+    persist({
+      ...guest,
+      progress,
+      bestKnown: Math.max(guest.bestKnown, known),
+      lastSetId: next ? next.id : guest.lastSetId,
+    })
+    if (next) setCurrentSetId(next.id)
+  }
+
+  // The highest N such that every set up to N is fully known -- what the
+  // starting-point picker shows, whether that came from seeding or play.
+  const knownUpTo = (() => {
+    let upTo: number | null = null
+    for (const s of [...sets].sort((a, b) => a.id - b.id)) {
+      if (!isSetFullyKnown(s.words, progress)) break
+      upTo = s.id
+    }
+    return upTo
+  })()
 
   // Null in the stored record means nobody has said, which reads as
   // yes: this app is used with a parent sitting alongside. See
@@ -412,9 +458,25 @@ export function GuestHome({ sets }: Props) {
 
   return (
     <main className="relative flex flex-1 flex-col items-center justify-evenly gap-6 px-6 py-10">
-      <div className="flex items-center gap-4">
-        {guest.avatar && <Avatar avatar={guest.avatar} size={56} />}
-      </div>
+      {/*
+        Their friend, and the way to swap it. A button rather than a
+        picture, at the child target size, because a child who wants the
+        panda today should not have to Start again -- which is two taps
+        deep on purpose and throws the game away -- to get it.
+      */}
+      {guest.avatar && (
+        <button
+          type="button"
+          data-testid="change-friend"
+          aria-label="Change your friend"
+          onClick={() => setView('avatar')}
+          style={{ minHeight: MIN_TARGET_PX, minWidth: MIN_TARGET_PX }}
+          className="flex items-center justify-center rounded-clay cursor-pointer select-none
+            focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-fun"
+        >
+          <Avatar avatar={guest.avatar} size={56} />
+        </button>
+      )}
 
       <ProgressMap
         sets={sets}
@@ -446,6 +508,7 @@ export function GuestHome({ sets }: Props) {
       )}
 
       <IslandWords sets={sets} hereId={here?.id} schoolSetId={guest.schoolSetId}>
+        <StartingPointPicker sets={sets} value={knownUpTo} onChange={setStartingPoint} />
         <SchoolSetPicker
           sets={sets}
           value={guest.schoolSetId}

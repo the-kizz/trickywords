@@ -49,7 +49,7 @@ export function SchoolSetPicker({ sets, value, onChange }: Props) {
       </select>
       <p className="w-full text-sm text-muted-foreground leading-normal">
         Marks that island on the map. Any island can still be played, any time.
-        Kept on this device, for this visit only.
+        Kept on this device.
       </p>
     </div>
   )

@@ -21,6 +21,15 @@ beforeEach(() => {
   silence()
 })
 
+// Guest progress lives in localStorage now (and once lived in
+// sessionStorage, which `loadGuest` still adopts from). Both are
+// origin-wide in jsdom, so a record one test leaves behind is the next
+// test's returning visitor. Every test starts as a first visit.
+beforeEach(() => {
+  try { localStorage.clear() } catch { /* jsdom without storage */ }
+  try { sessionStorage.clear() } catch { /* jsdom without storage */ }
+})
+
 /**
  * A fixed day, for the whole suite.
  *

@@ -26,8 +26,7 @@ export interface GuestState {
    * The island an adult has said the class is working on, or null for
    * "not set" -- which is the normal state. Guest play has no parent
    * area and no server, so it is set on the map (see `SchoolSetPicker`)
-   * or seeded from a shared `?set=N` link, and it lives only in this
-   * tab's sessionStorage.
+   * or seeded from a shared `?set=N` link, and it lives on this device.
    */
   schoolSetId: number | null
   /**
@@ -35,8 +34,8 @@ export interface GuestState {
    * has said" -- which reads as yes, see `GROWN_UP_DEFAULT`.
    *
    * Guest play has no server and no parent area, so this is set on the
-   * map beside the class picker and lives only in this tab's
-   * sessionStorage. It is the same switch the family map carries and it
+   * map beside the class picker and lives on this device. It is the
+   * same switch the family map carries and it
    * changes the same one thing: who judges a Read it round, and so
    * whether a reading can move the word up the ladder.
    */
@@ -51,45 +50,87 @@ const empty = (): GuestState => ({
 })
 
 /**
- * Guest progress lives in sessionStorage, deliberately:
- *   - per tab, so two children on one device never collide and the
- *     server holds no per-visitor state at all
- *   - survives a refresh, so an accidental pull-to-refresh on a tablet
- *     does not wipe a child's game
- *   - gone when the tab closes, so nothing is retained
- *   - never sent to the server, unlike a cookie, so there is no consent
- *     obligation and nothing server-side to leak
+ * Guest progress lives in the browser's localStorage, on purpose:
+ *
+ *   - **it survives the tab closing.** It used to be sessionStorage,
+ *     which is gone when the tab goes -- and the public page is the one
+ *     actually used, so every visit started every word at box 0: two
+ *     choices, word shown first, maximum support, forever. Difficulty
+ *     never rose, and Read it -- which needs box 1 -- could never appear
+ *     on a first visit at all. The spaced repetition this app is built
+ *     on was doing nothing on the surface people play.
+ *   - **one record per device.** The avatar is a costume, not a key:
+ *     children pick a different friend each time because there are so
+ *     many, and progress keyed to a friend would scatter across eight
+ *     of them. So there is one record, the picker shows every visit,
+ *     and any friend picked keeps what has been learned. Two children
+ *     on one device is what the family surface's real profiles are for;
+ *     on this surface, "Start again" is the reset.
+ *   - **still no server, no cookie, no name.** localStorage is the same
+ *     legal category as sessionStorage -- never sent anywhere, no
+ *     consent obligation, nothing server-side to leak. A full record is
+ *     about 10KB against a ~5MB per-site quota.
+ *   - survives a refresh, so a pull-to-refresh on a tablet does not
+ *     wipe a game.
+ *
+ * `loadGuest` adopts a record left in sessionStorage by the version
+ * before this one, so a tab that was open across the upgrade keeps its
+ * game.
  */
-export function loadGuest(): GuestState {
-  if (typeof sessionStorage === 'undefined') return empty()
+function storage(): Storage | null {
   try {
-    const raw = sessionStorage.getItem(GUEST_KEY)
-    if (!raw) return empty()
-    const parsed = JSON.parse(raw) as Partial<GuestState>
-    const progress = parsed.progress ?? {}
-    return {
-      avatar: parsed.avatar ?? null,
-      progress,
-      // A record written before this field existed is seeded from what
-      // it currently knows, so a visit in progress never looks as though
-      // it has lost everything.
-      bestKnown: highWaterKnown(
-        parsed.bestKnown,
-        Object.values(progress).filter((p) => p.stage === 'known').length,
-      ),
-      // A record written before this field existed has no island on it.
-      // Null is not a guess: `currentSet` falls back to the furthest
-      // island the progress itself shows they have touched, which is a
-      // better answer than any default this could invent.
-      lastSetId: typeof parsed.lastSetId === 'number' ? parsed.lastSetId : null,
-      schoolSetId: typeof parsed.schoolSetId === 'number' ? parsed.schoolSetId : null,
-      // Null, not `GROWN_UP_DEFAULT`, for a record written before this
-      // field existed: null *reads* as the default wherever it is used,
-      // and keeping it null means the default can change later without
-      // every stored visit carrying the old one.
-      grownUp: typeof parsed.grownUp === 'boolean' ? parsed.grownUp : null,
-      startedAt: parsed.startedAt ?? Date.now(),
+    if (typeof localStorage === 'undefined') return null
+    return localStorage
+  } catch {
+    // Some browsers throw on the mere access in private mode.
+    return null
+  }
+}
+
+function normalise(parsed: Partial<GuestState>): GuestState {
+  const progress = parsed.progress ?? {}
+  return {
+    avatar: parsed.avatar ?? null,
+    progress,
+    // A record written before this field existed is seeded from what
+    // it currently knows, so a visit in progress never looks as though
+    // it has lost everything.
+    bestKnown: highWaterKnown(
+      parsed.bestKnown,
+      Object.values(progress).filter((p) => p.stage === 'known').length,
+    ),
+    // A record written before this field existed has no island on it.
+    // Null is not a guess: `currentSet` falls back to the furthest
+    // island the progress itself shows they have touched, which is a
+    // better answer than any default this could invent.
+    lastSetId: typeof parsed.lastSetId === 'number' ? parsed.lastSetId : null,
+    schoolSetId: typeof parsed.schoolSetId === 'number' ? parsed.schoolSetId : null,
+    // Null, not `GROWN_UP_DEFAULT`, for a record written before this
+    // field existed: null *reads* as the default wherever it is used,
+    // and keeping it null means the default can change later without
+    // every stored visit carrying the old one.
+    grownUp: typeof parsed.grownUp === 'boolean' ? parsed.grownUp : null,
+    startedAt: parsed.startedAt ?? Date.now(),
+  }
+}
+
+export function loadGuest(): GuestState {
+  const store = storage()
+  if (!store) return empty()
+  try {
+    let raw = store.getItem(GUEST_KEY)
+    if (!raw && typeof sessionStorage !== 'undefined') {
+      // The version before this one kept the record per tab. A tab open
+      // across the upgrade still has it there; take it, once.
+      const legacy = sessionStorage.getItem(GUEST_KEY)
+      if (legacy) {
+        store.setItem(GUEST_KEY, legacy)
+        sessionStorage.removeItem(GUEST_KEY)
+        raw = legacy
+      }
     }
+    if (!raw) return empty()
+    return normalise(JSON.parse(raw) as Partial<GuestState>)
   } catch {
     // Corrupt state must never block a child from playing.
     return empty()
@@ -97,15 +138,17 @@ export function loadGuest(): GuestState {
 }
 
 export function saveGuest(state: GuestState): void {
-  if (typeof sessionStorage === 'undefined') return
+  const store = storage()
+  if (!store) return
   try {
-    sessionStorage.setItem(GUEST_KEY, JSON.stringify(state))
+    store.setItem(GUEST_KEY, JSON.stringify(state))
   } catch {
-    // Storage full or blocked (private mode). Play continues in memory.
+    // Storage full or blocked. Play continues in memory.
   }
 }
 
 export function clearGuest(): void {
-  if (typeof sessionStorage === 'undefined') return
-  try { sessionStorage.removeItem(GUEST_KEY) } catch { /* ignore */ }
+  const store = storage()
+  if (!store) return
+  try { store.removeItem(GUEST_KEY) } catch { /* ignore */ }
 }

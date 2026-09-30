@@ -78,7 +78,7 @@ async function persist(body: Record<string, unknown>) {
  * The family-mode play surface for one named profile. Same session
  * engine and set map as guest play, but progress is loaded from and
  * saved back to the family database via `/api/progress` instead of
- * sessionStorage.
+ * the browser.
  */
 export function FamilyPlay({
   profileId, profileName, profileAvatar, sets, initialProgress,

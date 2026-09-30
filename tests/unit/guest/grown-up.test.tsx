@@ -27,6 +27,40 @@ beforeEach(() => {
 
 afterEach(() => { vi.useRealTimers() })
 
+/**
+ * The friend is a costume, not the key to the record. Children pick a
+ * different one each visit because there are so many; progress keyed to
+ * a friend would scatter across eight of them.
+ */
+describe('changing friend on the guest surface', () => {
+  const played = (): WordProgress => ({ ...newProgress('said'), box: 3, stage: 'reviewing' })
+
+  it('brings a returning child straight to the map, friend remembered', async () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', progress: { said: played() } })
+    render(<GuestHome sets={SETS} />)
+    await waitFor(() => expect(screen.getByTestId('change-friend')).toBeInTheDocument())
+    expect(screen.queryAllByTestId(/^avatar-/)).toHaveLength(0)
+  })
+
+  it('goes back to the picker from the friend on the map, and keeps everything', async () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', progress: { said: played() }, lastSetId: 4 })
+    render(<GuestHome sets={SETS} />)
+    await userEvent.click(await screen.findByTestId('change-friend'))
+    const avatars = screen.getAllByTestId(/^avatar-/)
+    expect(avatars.length).toBeGreaterThan(2)
+
+    // Pick a different one.
+    const other = avatars.find((a) => !a.getAttribute('data-testid')!.endsWith('fox')) ?? avatars[1]
+    await userEvent.click(other)
+    await waitFor(() => expect(screen.getByTestId('change-friend')).toBeInTheDocument())
+
+    const after = loadGuest()
+    expect(after.avatar).not.toBe('fox')
+    expect(after.progress.said).toEqual(played())
+    expect(after.lastSetId).toBe(4)
+  })
+})
+
 describe('a grown-up on the guest surface', () => {
   it('is assumed to be there, because that is how this is used', () => {
     expect(GROWN_UP_DEFAULT).toBe(true)
@@ -49,7 +83,7 @@ describe('a grown-up on the guest surface', () => {
     await waitFor(() => expect(loadGuest().grownUp).toBe(false))
     // Persisted as a deliberate choice, not expired -- both states last
     // until changed.
-    expect(JSON.parse(sessionStorage.getItem(GUEST_KEY)!).grownUp).toBe(false)
+    expect(JSON.parse(localStorage.getItem(GUEST_KEY)!).grownUp).toBe(false)
   })
 
   it('offers the card run only while a grown-up is there', async () => {

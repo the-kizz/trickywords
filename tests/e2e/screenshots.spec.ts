@@ -226,7 +226,7 @@ test.fixme('04 build the word -- a word part-built', async ({ page }) => {
   // "hybrid": it mixes in every word the child has already met, and by
   // the time this spec runs the earlier specs have had Robin meet most
   // of Sets 1-3 -- whose two-grapheme heart words crowd out the long
-  // ones this picture needs. Guest progress lives in sessionStorage
+  // ones this picture needs. Guest progress lives in localStorage
   // and starts empty.
   //
   // Build the Word comes round for a heart word past box 0, at most
@@ -256,7 +256,7 @@ test.fixme('04 build the word -- a word part-built', async ({ page }) => {
       correctStreak: 2, attempts: 2, lapses: 0, struggling: false,
       saidIt: 0, readToAdult: 0, lastCreditedOn: null,
     }]))
-    sessionStorage.setItem('trickywords.guest', JSON.stringify({
+    localStorage.setItem('trickywords.guest', JSON.stringify({
       avatar: 'fox', progress, bestKnown: 0, lastSetId: 10,
       schoolSetId: null, grownUp: false, startedAt: Date.now(),
     }))
@@ -269,7 +269,7 @@ test.fixme('04 build the word -- a word part-built', async ({ page }) => {
     if ((await avatar.count()) > 0) await avatar.click()
     // `?set=N` auto-starts the session a tick after the avatar is in
     // place (and straight away on a later attempt, where the avatar is
-    // already in sessionStorage), so wait for the round to be up rather
+    // already stored), so wait for the round to be up rather
     // than asking what is on screen while the map still is.
     await expect(page.getByTestId('round-counter')).toBeVisible()
 
