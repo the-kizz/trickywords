@@ -55,7 +55,7 @@ export function SayIt({ word, onSaid, onAgain }: Props) {
     <div
       data-testid="say-it"
       className="flex w-full flex-col items-center justify-center p-4
-        gap-[clamp(0.75rem,2.5vh,1.5rem)] min-h-[60vh]"
+        gap-[clamp(0.75rem,2.5vh,1.5rem)]"
     >
       <p className="font-word text-[clamp(1.125rem,2.5vw,1.5rem)] font-semibold text-muted-foreground text-center leading-normal">
         {PHRASES.sayIt}

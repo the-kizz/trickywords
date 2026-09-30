@@ -96,9 +96,10 @@ switch is `TRICKYWORDS_PUBLIC` — unset, port 3001 isn't even bound.
   set a child's starting point, edit word sets, and optionally record your
   own voice for any word.
 - **A grown-up switch, and a card run** — one toggle per child for "a
-  grown-up is here", which turns on *Read it* rounds and makes your
-  verdict count on the same ladder as a tap. It lasts for the day only, so
-  it is never left on by accident. Beside it, *cards*: the island's words
+  grown-up is here", at the top of the map, which turns on *Read it*
+  rounds and makes your verdict count on the same ladder as a tap. It is
+  off until you turn it on, and then stays as you left it on that device.
+  Beside it, *cards*: the island's words
   dealt one at a time with no game around them, which is the school's own
   whole-word routine and the closest thing here to the test a teacher
   gives.

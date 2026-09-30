@@ -121,7 +121,7 @@ export function HeartWordBuilder({ round, onAnswer, onMiss }: GameProps) {
 
   return (
     <div className="flex w-full flex-col items-center justify-center p-4
-      gap-[clamp(0.75rem,2.5vh,1.5rem)] min-h-[60vh]">
+      gap-[clamp(0.75rem,2.5vh,1.5rem)]">
       <RoundHeader
         round={round}
         instruction="buildTheWord"

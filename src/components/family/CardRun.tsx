@@ -5,6 +5,7 @@ import { WordTile } from '@/components/clay/WordTile'
 import { useAudio } from '@/lib/audio/player'
 import { shuffled } from '@/lib/engine/session'
 import { wordAudioUrl } from '@/lib/audio/manifest'
+import { AdultButton } from '@/components/clay/AdultButton'
 import { ADULT_TARGET_PX } from '@/lib/constants'
 import type { Word } from '@/lib/words/types'
 
@@ -70,16 +71,7 @@ export function CardRun({ words, onRead, onDone }: Props) {
         <p className="max-w-md text-muted-foreground leading-normal">
           The rest are the ones worth another go tomorrow. Nothing here is a mark.
         </p>
-        <button
-          type="button"
-          onClick={onDone}
-          style={{ minHeight: ADULT_TARGET_PX }}
-          className="rounded-clay border-2 border-transparent bg-primary text-on-primary
-            px-5 font-semibold cursor-pointer select-none
-            focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
-        >
-          Done
-        </button>
+        <AdultButton label="Done" primary onPress={onDone} />
       </div>
     )
   }
@@ -125,27 +117,8 @@ export function CardRun({ words, onRead, onDone }: Props) {
       </p>
 
       <div className="flex flex-wrap justify-center gap-4">
-        <button
-          type="button"
-          onClick={() => answer(true)}
-          style={{ minHeight: ADULT_TARGET_PX }}
-          className="rounded-clay border-2 border-transparent bg-primary text-on-primary
-            px-5 font-semibold cursor-pointer select-none
-            focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
-        >
-          They read it
-        </button>
-        <button
-          type="button"
-          onClick={() => answer(false)}
-          aria-label="Tell them the word"
-          style={{ minHeight: ADULT_TARGET_PX }}
-          className="rounded-clay border-2 border-border bg-card text-muted-foreground
-            px-5 font-semibold cursor-pointer select-none hover:text-foreground
-            focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
-        >
-          Tell them
-        </button>
+        <AdultButton label="They read it" primary onPress={() => answer(true)} />
+        <AdultButton label="Tell them" ariaLabel="Tell them the word" onPress={() => answer(false)} />
       </div>
     </div>
   )

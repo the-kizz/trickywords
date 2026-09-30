@@ -31,7 +31,7 @@ export interface GuestState {
   schoolSetId: number | null
   /**
    * Whether an adult is sitting with this visitor, or null for "nobody
-   * has said" -- which reads as yes, see `GROWN_UP_DEFAULT`.
+   * has said" -- which reads as the default, see `GROWN_UP_DEFAULT`.
    *
    * Guest play has no server and no parent area, so this is set on the
    * map beside the class picker and lives on this device. It is the

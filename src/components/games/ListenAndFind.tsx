@@ -26,6 +26,13 @@ type Closing =
   | 'chest'
   /** The sentence, read aloud with the word lit, at box 2 and up. */
   | 'sentence'
+  /**
+   * Answered, nothing more to show: waiting out the praise. Below the
+   * chest and the sentence the choices used to stay up through "Well
+   * done!", and a five-year-old's second tap on the same tile said it
+   * again.
+   */
+  | 'done'
 
 /**
  * Hear the word, find it among a few others -- the one act this app is
@@ -102,6 +109,7 @@ export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
         timer.current = window.setTimeout(afterChest, CHEST_REVEAL_MS)
         return
       }
+      setClosing('done')
       afterChest()
       return
     }
@@ -116,7 +124,7 @@ export function ListenAndFind({ round, onAnswer, onMiss }: GameProps) {
 
   return (
     <div className="flex w-full flex-col items-center justify-center p-4
-      gap-[clamp(0.75rem,2.5vh,1.5rem)] min-h-[60vh]">
+      gap-[clamp(0.75rem,2.5vh,1.5rem)]">
       <RoundHeader
         round={round}
         instruction="findTheWord"

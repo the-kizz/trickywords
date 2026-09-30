@@ -205,8 +205,7 @@ export function GuestHome({ sets }: Props) {
   })()
 
   // Null in the stored record means nobody has said, which reads as
-  // yes: this app is used with a parent sitting alongside. See
-  // `GROWN_UP_DEFAULT`.
+  // the default -- see `GROWN_UP_DEFAULT`.
   const grownUp = guest.grownUp ?? GROWN_UP_DEFAULT
 
   /**
@@ -437,7 +436,15 @@ export function GuestHome({ sets }: Props) {
        * stray tap below the answers, and wiped the whole visit -- it
        * now lives on the map, two taps deep (see `StartAgainControl`).
        */
-      <main className="flex flex-1 flex-col items-center justify-center gap-[clamp(1rem,5vh,3rem)] px-6 py-6">
+      /*
+       * `justify-start`: a session reads from the top -- Back, the pips,
+       * then the round -- and centring the column vertically put Back
+       * 112px down a phone and the first tappable thing at half height,
+       * with a band of nothing under the pips that read as "still
+       * loading?". See also the games' own wrappers, which no longer
+       * claim 60vh for the same reason.
+       */
+      <main className="flex flex-1 flex-col items-center justify-start gap-[clamp(1rem,5vh,3rem)] px-6 py-6">
         <SessionRunner
           key={go}
           grownUp={grownUp}
@@ -478,17 +485,11 @@ export function GuestHome({ sets }: Props) {
         </button>
       )}
 
-      <ProgressMap
-        sets={sets}
-        progress={progress}
-        onPickSet={startSet}
-        currentSetId={currentSetId}
-        schoolSetId={guest.schoolSetId}
-        companionStage={companionStage(guest.bestKnown)}
-      />
-
-      {knowsThemAll && <KnowThemAll stage={companionStage(guest.bestKnown)} />}
-
+      {/*
+        Near the top, not under twelve islands: a parent who is there
+        should find this without scrolling past the whole map, and the
+        card run belongs beside the switch that reveals it.
+      */}
       <GrownUpToggle
         here={grownUp}
         onChange={(next) => persist({ ...guest, grownUp: next })}
@@ -499,13 +500,24 @@ export function GuestHome({ sets }: Props) {
           type="button"
           onClick={() => setView('cards')}
           style={{ minHeight: ADULT_TARGET_PX }}
-          className="rounded-clay border-2 border-border bg-card px-5 text-sm font-semibold
+          className="mb-3 rounded-clay border-2 border-border bg-card px-5 text-sm font-semibold
             text-muted-foreground cursor-pointer select-none hover:text-foreground
             focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
         >
           Go through {here.name}&rsquo;s cards
         </button>
       )}
+
+      <ProgressMap
+        sets={sets}
+        progress={progress}
+        onPickSet={startSet}
+        currentSetId={currentSetId}
+        schoolSetId={guest.schoolSetId}
+        companionStage={companionStage(guest.bestKnown)}
+      />
+
+      {knowsThemAll && <KnowThemAll stage={companionStage(guest.bestKnown)} />}
 
       <IslandWords sets={sets} hereId={here?.id} schoolSetId={guest.schoolSetId}>
         <StartingPointPicker sets={sets} value={knownUpTo} onChange={setStartingPoint} />

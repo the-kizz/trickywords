@@ -15,8 +15,8 @@ import type { WordProgress } from '@/lib/engine/types'
  * Guest play is the public surface, and it is the one being used in
  * practice -- so a Read it round that only ever appeared behind the
  * family map was a round nobody met. It needs no server: guest progress
- * already holds the same `WordProgress` records, in this tab's
- * sessionStorage.
+ * already holds the same `WordProgress` records, in this device's
+ * localStorage.
  */
 const SETS = DEFAULT_SETS
 
@@ -62,28 +62,39 @@ describe('changing friend on the guest surface', () => {
 })
 
 describe('a grown-up on the guest surface', () => {
-  it('is assumed to be there, because that is how this is used', () => {
-    expect(GROWN_UP_DEFAULT).toBe(true)
+  it('is not assumed to be there: the page is shared with families we do not know', () => {
+    expect(GROWN_UP_DEFAULT).toBe(false)
     // Nothing stored yet: the derived answer is the default, and the
     // stored field stays null so the default can change later without
     // every saved visit carrying the old one.
     expect(loadGuest().grownUp).toBeNull()
   })
 
-  it('offers the switch on the map, and remembers being turned off', async () => {
+  it('offers the switch on the map, and remembers being turned on', async () => {
     render(<GuestHome sets={SETS} />)
     // Past the avatar step.
     await userEvent.click(screen.getAllByRole('button')[0])
     await waitFor(() => expect(screen.getByTestId('grown-up-toggle')).toBeInTheDocument())
 
     const toggle = screen.getByTestId('grown-up-toggle') as HTMLInputElement
-    expect(toggle.checked).toBe(true)
+    expect(toggle.checked).toBe(false)
 
     await userEvent.click(toggle)
-    await waitFor(() => expect(loadGuest().grownUp).toBe(false))
+    await waitFor(() => expect(loadGuest().grownUp).toBe(true))
     // Persisted as a deliberate choice, not expired -- both states last
     // until changed.
-    expect(JSON.parse(localStorage.getItem(GUEST_KEY)!).grownUp).toBe(false)
+    expect(JSON.parse(localStorage.getItem(GUEST_KEY)!).grownUp).toBe(true)
+  })
+
+  it('puts the switch above the islands, where a parent finds it without scrolling', async () => {
+    render(<GuestHome sets={SETS} />)
+    await userEvent.click(screen.getAllByRole('button')[0])
+    const toggle = await screen.findByTestId('grown-up-toggle')
+    const firstIsland = screen.getByTestId('map-companion')
+    // The companion sits on the map itself. DOM order is reading order
+    // here; nothing is repositioned by CSS.
+    expect(toggle.compareDocumentPosition(firstIsland) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy()
   })
 
   it('offers the card run only while a grown-up is there', async () => {
@@ -91,15 +102,15 @@ describe('a grown-up on the guest surface', () => {
     await userEvent.click(screen.getAllByRole('button')[0])
     await waitFor(() => expect(screen.getByTestId('grown-up-toggle')).toBeInTheDocument())
 
-    expect(screen.getByRole('button', { name: /Go through/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Go through/ })).toBeNull()
     await userEvent.click(screen.getByTestId('grown-up-toggle'))
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: /Go through/ })).toBeNull())
+      expect(screen.getByRole('button', { name: /Go through/ })).toBeInTheDocument())
   })
 
-  it('keeps a turned-off switch across a reload of the same tab', () => {
-    saveGuest({ ...loadGuest(), avatar: 'fox', grownUp: false })
-    expect(loadGuest().grownUp).toBe(false)
+  it('keeps a turned-on switch across a reload of the same tab', () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', grownUp: true })
+    expect(loadGuest().grownUp).toBe(true)
   })
 })
 

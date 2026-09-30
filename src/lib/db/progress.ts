@@ -114,7 +114,7 @@ export function getSchoolSetId(db: Db, profileId: number): number | null {
  * Per child, because in a house with two children one may be reading to
  * a parent while the other plays alone.
  *
- * Stored explicitly as '1' or '0', with **absent meaning on** -- see
+ * Stored explicitly as '1' or '0', with **absent meaning the default** -- see
  * `GROWN_UP_DEFAULT`. The row therefore records a deliberate choice in
  * either direction and persists until changed; an earlier version stored
  * the day and expired overnight, which only made sense while the default

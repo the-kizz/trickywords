@@ -249,10 +249,9 @@ async function solveWhereIsTheHeart(page: Page): Promise<void> {
 /**
  * Read it: nothing to tap but the judgement.
  *
- * A grown-up is assumed to be there by default (`GROWN_UP_DEFAULT`), so
- * the adult's controls are what is normally on screen, and the sentence
- * step follows the reading. Both paths resolve the round; the child's
- * own tick is here because the switch can be turned off.
+ * With the grown-up switch on, the adult's controls are on screen and the
+ * sentence step follows the reading; off (the default), it is the child's
+ * own tick. Both paths resolve the round.
  */
 async function solveReadIt(page: Page): Promise<void> {
   const before = await getMarker(page)

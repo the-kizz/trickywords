@@ -530,7 +530,15 @@ export function SessionRunner({
   return (
     <GrownUpProvider value={grownUp}>
     <div
-      className="flex flex-col items-center gap-3"
+      /*
+       * `w-full`, so the Back row below is as wide as the viewport and
+       * not as wide as this round's content. Without it the column
+       * shrink-wrapped to its widest child, and Back's left edge moved
+       * every round -- 118px, 48, 67, 85, 62, 43, 24 across one session
+       * on a phone -- wherever that round's text happened to start. The
+       * one escape control should be where the hand last found it.
+       */
+      className="w-full flex flex-col items-center gap-3"
       /*
        * The word this round is asking for, for the end-to-end suite.
        * Invisible, never announced (a `data-` attribute is not in the

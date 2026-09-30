@@ -2,50 +2,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowClockwiseIcon, CheckIcon, SpeakerHighIcon } from '@phosphor-icons/react'
 import { ClayButton } from '@/components/clay/Button'
+import { AdultButton } from '@/components/clay/AdultButton'
 import { WordTile } from '@/components/clay/WordTile'
 import { useAudio, clipDurationMs as celebrationMs, GAP_MS } from '@/lib/audio/player'
 import { PHRASES, phraseAudioUrl, sentenceAudioUrl, wordAudioUrl } from '@/lib/audio/manifest'
-import { ADULT_TARGET_PX } from '@/lib/constants'
 import { useGrownUp } from './GrownUpContext'
 import type { GameProps } from './types'
 
 /**
- * A grown-up's control, not a child's.
+ * The grown-up's part of the screen, in the grown-up's register.
  *
- * Deliberately not `ClayButton`: that is built for a five-year-old's
- * finger and a child's eye, and these are read and pressed by an adult
- * looking over their shoulder. Adult-sized (`ADULT_TARGET_PX`) and worded
- * rather than iconic, and never the primary fill every answer button the
- * child has tapped all session wears -- an adult-sized blue button in the
- * child's own colour is a button a five-year-old presses. Both of these
- * are outlined on the card surface instead; the emphasis between them is
- * the border, not the fill.
+ * Both lines on a Read it screen were muted, centred body text with the
+ * word between them, so top to bottom they read as one script -- "Say it
+ * out loud" (the child's, spoken) straight into "Did they read it on
+ * their own?" (the adult's, not). The map's grown-up switch already set
+ * a register for things that are the adult's: small, left-aligned,
+ * bordered on the card surface. The adult block here wears the same
+ * one, so two registers are on screen instead of one, and whose line is
+ * whose is a matter of shape before it is a matter of reading.
  */
-function AdultButton(
-  { label, ariaLabel, primary, onPress }: {
-    label: string
-    /** The full sentence, where the visible label is shortened to fit. */
-    ariaLabel?: string
-    primary?: boolean
-    onPress: () => void
-  },
-) {
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel ?? label}
-      onClick={onPress}
-      style={{ minHeight: ADULT_TARGET_PX }}
-      className={`rounded-clay border-2 px-5 font-semibold cursor-pointer select-none
-        focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun
-        ${primary
-          ? 'border-foreground bg-card text-foreground'
-          : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
-    >
-      {label}
-    </button>
-  )
-}
+const ADULT_PANEL = `flex flex-col gap-3 w-full max-w-md rounded-clay border-2 border-border
+  bg-card px-4 py-3 text-sm font-semibold text-muted-foreground`
 
 /**
  * The word alone, no sound, and they read it.
@@ -172,26 +149,27 @@ export function ReadIt({ round, onAnswer, onMiss, onRead }: GameProps) {
       <div
         data-testid="read-it-sentence"
         className="flex w-full flex-col items-center justify-center p-4
-          gap-[clamp(0.75rem,2.5vh,1.5rem)] min-h-[60vh]"
+          gap-[clamp(0.75rem,2.5vh,1.5rem)]"
       >
         <div data-testid="read-it-word">
           <WordTile word={word} showTricky size="lg" />
         </div>
 
-        <p className="max-w-md text-center text-[clamp(1rem,2vw,1.125rem)] text-muted-foreground leading-normal">
-          Ask them: <strong className="text-foreground">can you use it in a sentence?</strong>
-          <br />
-          Anything they say counts. Nothing here is marked.
-        </p>
-
-        <div className="flex flex-wrap justify-center gap-4">
-          <AdultButton
-            label="They did"
-            ariaLabel="They said a sentence"
-            primary
-            onPress={() => afterSentence(true)}
-          />
-          <AdultButton label="Skip" ariaLabel="Skip the sentence" onPress={() => afterSentence(false)} />
+        <div className={ADULT_PANEL}>
+          <p className="leading-normal">
+            Ask them: <strong className="text-foreground">can you use it in a sentence?</strong>
+            <br />
+            <span className="font-normal">Anything they say counts. Nothing here is marked.</span>
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <AdultButton
+              label="They did"
+              ariaLabel="They said a sentence"
+              primary
+              onPress={() => afterSentence(true)}
+            />
+            <AdultButton label="Skip" ariaLabel="Skip the sentence" onPress={() => afterSentence(false)} />
+          </div>
         </div>
       </div>
     )
@@ -201,7 +179,7 @@ export function ReadIt({ round, onAnswer, onMiss, onRead }: GameProps) {
     <div
       data-testid="read-it"
       className="flex w-full flex-col items-center justify-center p-4
-        gap-[clamp(0.75rem,2.5vh,1.5rem)] min-h-[60vh]"
+        gap-[clamp(0.75rem,2.5vh,1.5rem)]"
     >
       <p className="font-word text-[clamp(1.125rem,2.5vw,1.5rem)] font-semibold text-muted-foreground text-center leading-normal">
         {PHRASES.sayIt}
@@ -212,11 +190,9 @@ export function ReadIt({ round, onAnswer, onMiss, onRead }: GameProps) {
       </div>
 
       {grownUp ? (
-        <div data-testid="read-it-adult" className="flex flex-col items-center gap-4">
-          <p className="max-w-md text-center text-[clamp(1rem,2vw,1.125rem)] text-muted-foreground leading-normal">
-            Did they read it on their own?
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
+        <div data-testid="read-it-adult" className={ADULT_PANEL}>
+          <p className="leading-normal">Did they read it on their own?</p>
+          <div className="flex flex-wrap gap-4">
             <AdultButton label="They read it" primary onPress={() => adultConfirmed(true)} />
             <AdultButton label="Tell them" ariaLabel="Tell them the word" onPress={() => adultConfirmed(false)} />
           </div>

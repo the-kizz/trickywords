@@ -48,8 +48,8 @@ interface Props {
   schoolSetId?: number | null
   /**
    * Whether an adult is sitting with this child, from the
-   * `grownUp:<profileId>` setting -- on unless somebody has said
-   * otherwise. It changes who judges a Read it round, and nothing else
+   * `grownUp:<profileId>` setting -- the default unless somebody has
+   * said otherwise. It changes who judges a Read it round, and nothing else
    * -- see `GrownUpToggle` and `GROWN_UP_DEFAULT`.
    */
   grownUpHere?: boolean
@@ -88,8 +88,7 @@ export function FamilyPlay({
     () => new Map(Object.entries(initialProgress)),
   )
   const [view, setView] = useState<View>('map')
-  // Seeded from the stored setting, which is on unless somebody turned
-  // it off -- this app is used with a parent sitting alongside.
+  // Seeded from the stored setting; absent means the default.
   const [grownUp, setGrownUp] = useState(grownUpHere)
   const [sessionWords, setSessionWords] = useState<Word[] | null>(null)
   /** Which go of this sitting is running -- see `playAgain`. */
@@ -272,7 +271,15 @@ export function FamilyPlay({
 
   if (view === 'session' && sessionWords) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-[clamp(1rem,5vh,3rem)] px-6 py-6">
+      /*
+       * `justify-start`: a session reads from the top -- Back, the pips,
+       * then the round -- and centring the column vertically put Back
+       * 112px down a phone and the first tappable thing at half height,
+       * with a band of nothing under the pips that read as "still
+       * loading?". See also the games' own wrappers, which no longer
+       * claim 60vh for the same reason.
+       */
+      <main className="flex flex-1 flex-col items-center justify-start gap-[clamp(1rem,5vh,3rem)] px-6 py-6">
         <SessionRunner
           key={go}
           words={sessionWords}
@@ -321,17 +328,6 @@ export function FamilyPlay({
         </div>
       </div>
 
-      <ProgressMap
-        sets={sets}
-        progress={progress}
-        onPickSet={startSet}
-        currentSetId={currentSetId}
-        schoolSetId={schoolSetId}
-        companionStage={companionStage(best)}
-      />
-
-      {knowsThemAll && <KnowThemAll stage={companionStage(best)} />}
-
       <GrownUpToggle
         here={grownUp}
         onChange={(next) => {
@@ -345,13 +341,24 @@ export function FamilyPlay({
           type="button"
           onClick={() => setView('cards')}
           style={{ minHeight: ADULT_TARGET_PX }}
-          className="rounded-clay border-2 border-border bg-card px-5 text-sm font-semibold
+          className="mb-3 rounded-clay border-2 border-border bg-card px-5 text-sm font-semibold
             text-muted-foreground cursor-pointer select-none hover:text-foreground
             focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
         >
           Go through {here.name}&rsquo;s cards
         </button>
       )}
+
+      <ProgressMap
+        sets={sets}
+        progress={progress}
+        onPickSet={startSet}
+        currentSetId={currentSetId}
+        schoolSetId={schoolSetId}
+        companionStage={companionStage(best)}
+      />
+
+      {knowsThemAll && <KnowThemAll stage={companionStage(best)} />}
 
       <IslandWords sets={sets} hereId={here?.id} schoolSetId={schoolSetId} />
     </main>
