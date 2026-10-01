@@ -12,7 +12,6 @@ import { applyStruggleRules } from '@/lib/engine/strugglers'
 import { currentSet, isSetFullyKnown } from '@/lib/engine/unlock'
 import { GROWN_UP_DEFAULT } from '@/lib/teaching'
 import { KnowThemAll } from '@/components/map/KnowThemAll'
-import { IslandWords } from '@/components/map/IslandWords'
 import { GrownUpToggle } from '@/components/map/GrownUpToggle'
 import { CardRun } from '@/components/family/CardRun'
 import { companionStage, highWaterKnown } from '@/lib/rewards'
@@ -360,7 +359,6 @@ export function FamilyPlay({
 
       {knowsThemAll && <KnowThemAll stage={companionStage(best)} />}
 
-      <IslandWords sets={sets} hereId={here?.id} schoolSetId={schoolSetId} />
     </main>
   )
 }

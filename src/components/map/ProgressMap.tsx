@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { CheckCircleIcon, CircleDashedIcon, PlayIcon } from '@phosphor-icons/react'
-import { MIN_TARGET_PX } from '@/lib/constants'
+import { CheckCircleIcon, CircleDashedIcon, InfoIcon, PlayIcon } from '@phosphor-icons/react'
+import { ADULT_TARGET_PX, MIN_TARGET_PX } from '@/lib/constants'
+import { IslandWords } from './IslandWords'
 import { MAX_BOX } from '@/lib/engine/ladder'
 import { currentSet, isSetFullyKnown } from '@/lib/engine/unlock'
 import { Companion } from '@/components/companion/Companion'
@@ -337,6 +338,10 @@ export function ProgressMap({
    */
   const hereId = currentSet(sets, progress, currentSetId)?.id
 
+  // The island whose words an adult has asked to see -- see `IslandWords`.
+  const [peekId, setPeekId] = useState<number | null>(null)
+  const peek = peekId === null ? undefined : sets.find((set) => set.id === peekId)
+
   return (
     <div className="w-full max-w-2xl mx-auto px-2" role="group" aria-label="Word set map">
       <div
@@ -430,6 +435,29 @@ export function ProgressMap({
                 `aria-hidden` because the button's own accessible name
                 already says it in words.
               */}
+              {/*
+                The (i): which words are on this island, for the adult.
+                Small and grey, at the tile's top-left corner, outside
+                the island button itself. The earlier design refused any
+                second target on an island on the grounds that a child
+                would start the wrong thing; what this starts is a card
+                of words and a Done button, which is nothing, and the
+                operator asked for the (i) by name. Adult-sized hit area,
+                child-invisible glyph.
+              */}
+              <button
+                type="button"
+                data-testid={`island-info-${set.id}`}
+                aria-label={`Which words are on ${set.name}?`}
+                onClick={() => setPeekId(set.id)}
+                style={{ minWidth: ADULT_TARGET_PX, minHeight: ADULT_TARGET_PX }}
+                className="absolute -top-4 -left-3 z-10 flex items-center justify-center
+                  text-muted-foreground/70 hover:text-foreground cursor-pointer
+                  focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-fun"
+              >
+                <InfoIcon aria-hidden="true" size={22} weight="bold" />
+              </button>
+
               {isSchool && (
                 <span
                   data-testid={`school-mark-${set.id}`}
@@ -463,6 +491,14 @@ export function ProgressMap({
           )
         })}
       </div>
+      {peek && (
+        <IslandWords
+          set={peek}
+          isHere={peek.id === hereId}
+          isSchool={schoolSetId != null && peek.id === schoolSetId}
+          onClose={() => setPeekId(null)}
+        />
+      )}
     </div>
   )
 }

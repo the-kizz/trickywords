@@ -98,15 +98,15 @@ describe('the card', () => {
   it('carries no number where a child looks', () => {
     const progress = at(SET1, { i: 5, the: 2 })
     render(<ProgressMap sets={[SET1]} progress={progress} onPickSet={() => {}} />)
-    expect(screen.getByRole('button').textContent).toBe(SET1.name)
+    expect(screen.getByRole('button', { name: new RegExp(`^${SET1.name},`) }).textContent).toBe(SET1.name)
   })
 
   /** The counts are for the adult, and they stay exact. */
   it('puts the counts in the accessible name and nowhere else', () => {
     const progress = at(SET1, { i: 5, the: 2, my: 2 })
     render(<ProgressMap sets={[SET1]} progress={progress} onPickSet={() => {}} />)
-    const name = screen.getByRole('button').getAttribute('alt')
-      ?? screen.getByRole('button').getAttribute('aria-label')!
+    const name = screen.getByRole('button', { name: new RegExp(`^${SET1.name},`) }).getAttribute('alt')
+      ?? screen.getByRole('button', { name: new RegExp(`^${SET1.name},`) }).getAttribute('aria-label')!
     expect(name).toContain('1 of 5 words known')
     expect(name).toContain('2 being learned')
     expect(name).toContain('2 not met yet')
@@ -129,7 +129,7 @@ describe('the card', () => {
     const progress = at(SET1, Object.fromEntries(SET1.words.map((w) => [w.id, 5])))
     render(<ProgressMap sets={[SET1]} progress={progress} onPickSet={() => {}} />)
     expect(marks(SET1.id)).toEqual(Array(SET1.words.length).fill('known'))
-    expect(screen.getByRole('button').getAttribute('aria-label'))
+    expect(screen.getByRole('button', { name: new RegExp(`^${SET1.name},`) }).getAttribute('aria-label'))
       .toContain('finished')
   })
 

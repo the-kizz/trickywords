@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { GuestHome } from '@/components/guest/GuestHome'
 import { DEFAULT_SETS } from '@/lib/words/default-sets'
 import { saveGuest } from '@/lib/guest/store'
@@ -64,8 +64,8 @@ describe('the finish line', () => {
       avatar: 'fox', progress: everythingKnown(), bestKnown: 56, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
-    const islands = screen.getByRole('group', { name: /word set map/i })
-      .querySelectorAll('button')
+    const islands = within(screen.getByRole('group', { name: /word set map/i }))
+      .getAllByRole('button', { name: /^Set \d+,/ })
     expect(islands).toHaveLength(DEFAULT_SETS.length)
     for (const island of islands) expect(island).toBeEnabled()
   })

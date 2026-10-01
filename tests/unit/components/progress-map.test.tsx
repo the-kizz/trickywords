@@ -16,7 +16,7 @@ describe('ProgressMap', () => {
     render(
       <ProgressMap sets={DEFAULT_SETS} progress={EMPTY_PROGRESS} onPickSet={() => {}} />,
     )
-    const buttons = screen.getAllByRole('button')
+    const buttons = screen.getAllByRole('button', { name: /^Set \d+,/ })
     expect(buttons).toHaveLength(DEFAULT_SETS.length)
     for (const button of buttons) {
       expect(button).toBeEnabled()
@@ -30,7 +30,7 @@ describe('ProgressMap', () => {
       <ProgressMap sets={DEFAULT_SETS} progress={EMPTY_PROGRESS} onPickSet={onPickSet} />,
     )
     const targetSet = DEFAULT_SETS[6] // Set 7 — a mid-sequence set nobody has touched
-    await userEvent.click(screen.getByRole('button', { name: new RegExp(targetSet.name) }))
+    await userEvent.click(screen.getByRole('button', { name: new RegExp(`^${targetSet.name},`) }))
     expect(onPickSet).toHaveBeenCalledWith(targetSet.id)
   })
 
@@ -38,7 +38,7 @@ describe('ProgressMap', () => {
     render(
       <ProgressMap sets={DEFAULT_SETS} progress={EMPTY_PROGRESS} onPickSet={() => {}} />,
     )
-    for (const button of screen.getAllByRole('button')) {
+    for (const button of screen.getAllByRole('button', { name: /^Set \d+,/ })) {
       expect(button).toHaveStyle({ minWidth: '76px', minHeight: '76px' })
     }
   })
@@ -293,9 +293,10 @@ describe('ProgressMap scrolls to where the child is', () => {
       expect(marks.querySelectorAll('[data-mark]')).toHaveLength(set1.words.length)
       // No count anywhere a child looks. The set's own name is a name,
       // not a number; what is gone is `0/5`.
-      expect(screen.getByRole('button').textContent)
+      const island = screen.getByRole('button', { name: new RegExp(`^${set1.name},`) })
+      expect(island.textContent)
         .not.toMatch(new RegExp(`\\d\\s*/\\s*${set1.words.length}`))
-      expect(screen.getByRole('button').textContent).toBe(set1.name)
+      expect(island.textContent).toBe(set1.name)
     })
 
     it('deepens a mark as its word climbs the ladder', () => {

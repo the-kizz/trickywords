@@ -91,7 +91,7 @@ describe('the island the class is working on', () => {
     expect(onPickSet).toHaveBeenCalledWith(11)
   })
 
-  it('shows on the family map, and in the word list', () => {
+  it('shows on the family map, and on that island\'s words sheet', async () => {
     render(
       <FamilyPlay
         profileId={1} profileName="Robin" profileAvatar="avatar-fox"
@@ -99,8 +99,8 @@ describe('the island the class is working on', () => {
       />,
     )
     expect(screen.getByTestId('school-mark-7')).toBeInTheDocument()
-    expect(screen.getByTestId('island-words-school').closest('li')!.textContent)
-      .toContain('Set 7')
+    await userEvent.click(screen.getByTestId('island-info-7'))
+    expect(screen.getByTestId('island-words-school')).toBeInTheDocument()
   })
 })
 
@@ -183,7 +183,7 @@ describe('the class marker in guest play', () => {
       schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
-    await userEvent.click(screen.getByText(/which words are on each island/i))
+    await userEvent.click(screen.getByText(/set up for your child/i))
     await userEvent.selectOptions(screen.getByTestId('guest-school-set'), '7')
     expect(loadGuest().schoolSetId).toBe(7)
     expect(screen.getByTestId('school-mark-7')).toBeInTheDocument()
@@ -195,7 +195,7 @@ describe('the class marker in guest play', () => {
       schoolSetId: null, grownUp: null, startedAt: 1,
     })
     render(<GuestHome sets={DEFAULT_SETS} />)
-    await userEvent.click(screen.getByText(/which words are on each island/i))
+    await userEvent.click(screen.getByText(/set up for your child/i))
     await userEvent.selectOptions(screen.getByTestId('guest-school-set'), '7')
     expect(fetchMock).not.toHaveBeenCalled()
     expect(document.cookie).toBe('')

@@ -98,7 +98,7 @@ test.describe('the map map reads in order on a phone, and lands on the right isl
       await page.goto('/play', { waitUntil: 'domcontentloaded' })
       await pickFirstAvatar(page)
 
-      const islands = page.getByRole('group', { name: 'Word set map' }).getByRole('button')
+      const islands = page.getByRole('group', { name: 'Word set map' }).getByRole('button', { name: /^Set \d+,/ })
       const count = await islands.count()
       expect(count).toBeGreaterThan(3)
 
@@ -182,7 +182,7 @@ test.describe('the map map reads in order on a phone, and lands on the right isl
       expect(backBox.width).toBeGreaterThanOrEqual(MIN_TARGET_PX - EPSILON)
       await expect(back).toHaveAccessibleName("Back to who's playing")
 
-      const islands = page.getByRole('group', { name: 'Word set map' }).getByRole('button')
+      const islands = page.getByRole('group', { name: 'Word set map' }).getByRole('button', { name: /^Set \d+,/ })
       for (let i = 0; i < (await islands.count()); i++) {
         const box = (await islands.nth(i).boundingBox())!
         expect(

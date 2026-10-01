@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { IslandWords } from '@/components/map/IslandWords'
+import { ProgressMap } from '@/components/map/ProgressMap'
 import { GuestHome } from '@/components/guest/GuestHome'
 import { FamilyPlay } from '@/components/family/FamilyPlay'
 import { ADULT_TARGET_PX } from '@/lib/constants'
 import { DEFAULT_SETS } from '@/lib/words/default-sets'
 import { saveGuest } from '@/lib/guest/store'
 
+const EMPTY = new Map()
+
 beforeEach(() => {
-  sessionStorage.clear()
   window.history.pushState({}, '', '/play')
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
   window.HTMLMediaElement.prototype.pause = vi.fn()
@@ -23,93 +24,112 @@ beforeEach(() => {
  * then we can go back later... Which is why a tooltip with the words
  * shown for each level is important."
  *
- * The need is a parent holding the sheet the school sent, looking for
- * the island that holds those words -- before tapping anything. The form
- * is not a tooltip: no hover on a tablet, nothing tappable inside an
- * island a child taps to play, and nothing for a pre-reader to read
- * where they are looking.
+ * An (i) on each island, as asked for; a sheet with that island's words
+ * when tapped. The long list of every island under the map is gone.
  */
 describe('the words on each island, for the adult', () => {
-  it('names every island and every one of its words', () => {
-    render(<IslandWords sets={DEFAULT_SETS} />)
-    const text = screen.getByTestId('island-words').textContent ?? ''
+  it('puts an (i) on every island, and nothing is open until one is tapped', () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} />)
     for (const set of DEFAULT_SETS) {
-      expect(text).toContain(set.name)
-      for (const word of set.words) expect(text).toContain(word.text)
+      expect(screen.getByTestId(`island-info-${set.id}`)).toBeInTheDocument()
     }
+    expect(screen.queryByTestId('island-words')).toBeNull()
   })
 
-  /** Closed until an adult opens it: the child's map is not a page of text. */
-  it('is closed until it is opened', () => {
-    render(<IslandWords sets={DEFAULT_SETS} />)
-    expect(screen.getByTestId('island-words')).not.toHaveAttribute('open')
+  it('shows that island\'s words, and only that island\'s, on a tap', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} />)
+    await userEvent.click(screen.getByTestId('island-info-7'))
+    const sheet = screen.getByTestId('island-words')
+    const text = sheet.textContent ?? ''
+    expect(text).toContain('Set 7')
+    for (const word of DEFAULT_SETS[6].words) expect(text).toContain(word.text)
+    for (const word of DEFAULT_SETS[0].words) expect(text).not.toContain(` ${word.text},`)
   })
 
-  it('opens on a tap, not on hover', async () => {
-    render(<IslandWords sets={DEFAULT_SETS} />)
-    const summary = screen.getByText(/which words are on each island/i)
-    await userEvent.click(summary)
-    expect(screen.getByTestId('island-words')).toHaveAttribute('open')
+  it('is a label, not a control: tapping the (i) does not start the island', async () => {
+    const onPickSet = vi.fn()
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={onPickSet} />)
+    await userEvent.click(screen.getByTestId('island-info-3'))
+    expect(onPickSet).not.toHaveBeenCalled()
   })
 
-  it('gives the adult control an adult-sized target', () => {
-    render(<IslandWords sets={DEFAULT_SETS} />)
-    const summary = screen.getByText(/which words are on each island/i)
-    expect(summary.style.minHeight).toBe(`${ADULT_TARGET_PX}px`)
+  it('closes on Done, and on Escape', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} />)
+    await userEvent.click(screen.getByTestId('island-info-3'))
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByTestId('island-words')).toBeNull()
+    await userEvent.click(screen.getByTestId('island-info-3'))
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByTestId('island-words')).toBeNull()
   })
 
-  it('marks where the child is, in words', () => {
-    render(<IslandWords sets={DEFAULT_SETS} hereId={7} />)
-    const row = screen.getByTestId('island-words-here').closest('li')!
-    expect(row.textContent).toContain('Set 7')
+  it('gives the adult controls adult-sized targets', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} />)
+    const info = screen.getByTestId('island-info-1')
+    expect(info.style.minHeight).toBe(`${ADULT_TARGET_PX}px`)
+    expect(info.style.minWidth).toBe(`${ADULT_TARGET_PX}px`)
+    await userEvent.click(info)
+    expect(screen.getByRole('button', { name: 'Done' }).style.minHeight).toBe(`${ADULT_TARGET_PX}px`)
   })
 
-  it('marks the island the class is on when one has been set', () => {
-    render(<IslandWords sets={DEFAULT_SETS} hereId={2} schoolSetId={7} />)
-    expect(screen.getByTestId('island-words-school').closest('li')!.textContent)
-      .toContain('Set 7')
+  it('marks where the child is, in words', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} currentSetId={7} />)
+    await userEvent.click(screen.getByTestId('island-info-7'))
+    expect(screen.getByTestId('island-words-here')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    await userEvent.click(screen.getByTestId('island-info-2'))
+    expect(screen.queryByTestId('island-words-here')).toBeNull()
   })
 
-  it('marks nothing about school when no island has been set', () => {
-    render(<IslandWords sets={DEFAULT_SETS} hereId={2} schoolSetId={null} />)
+  it('marks the island the class is on when one has been set', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} schoolSetId={7} />)
+    await userEvent.click(screen.getByTestId('island-info-7'))
+    expect(screen.getByTestId('island-words-school')).toBeInTheDocument()
+  })
+
+  it('marks nothing about school when no island has been set', async () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} schoolSetId={null} />)
+    await userEvent.click(screen.getByTestId('island-info-7'))
     expect(screen.queryByTestId('island-words-school')).toBeNull()
   })
 
-  /**
-   * It replaces the "This time: was, said, you" line: two adult lines
-   * under the map competed for one glance, and the old line named the
-   * session's words -- review from other islands included -- which is
-   * not something a parent can match against a sheet from school.
-   */
-  it('is the only adult word line on the map', () => {
+  /** The long list is gone from both maps; the (i)s are on both. */
+  it('is on the guest map, with no list of every island under it', () => {
     saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
     render(<GuestHome sets={DEFAULT_SETS} />)
-    expect(screen.getByTestId('island-words')).toBeInTheDocument()
+    expect(screen.getByTestId('island-info-1')).toBeInTheDocument()
+    expect(screen.queryByText(/which words are on each island/i)).toBeNull()
     expect(screen.queryByTestId('session-focus')).toBeNull()
   })
 
-  it('is on the family map too', () => {
+  it('is on the family map too', async () => {
     render(
       <FamilyPlay
         profileId={1} profileName="Robin" profileAvatar="avatar-fox"
         sets={DEFAULT_SETS} initialProgress={{}} lastSetId={3}
       />,
     )
-    expect(screen.getByTestId('island-words')).toBeInTheDocument()
-    expect(screen.getByTestId('island-words-here').closest('li')!.textContent)
-      .toContain('Set 3')
+    await userEvent.click(screen.getByTestId('island-info-3'))
+    expect(screen.getByTestId('island-words-here')).toBeInTheDocument()
+    expect(screen.queryByText(/which words are on each island/i)).toBeNull()
   })
 
-  /** An island is the control a child taps to play; this adds no other. */
-  it('puts no second tappable thing inside an island', () => {
-    render(
-      <FamilyPlay
-        profileId={1} profileName="Robin" profileAvatar="avatar-fox"
-        sets={DEFAULT_SETS} initialProgress={{}}
-      />,
-    )
-    expect(screen.getByTestId('island-words').querySelectorAll('button')).toHaveLength(0)
-    // Twelve islands, and nothing else claiming to be one.
+  /** The (i) never claims to be an island. */
+  it('leaves exactly twelve things claiming to be an island', () => {
+    render(<ProgressMap sets={DEFAULT_SETS} progress={EMPTY} onPickSet={() => {}} />)
     expect(screen.getAllByRole('button', { name: /^Set \d+,/ })).toHaveLength(12)
+  })
+})
+
+describe('the adult set-up on the guest map', () => {
+  it('holds both pickers, closed, beside the switch rather than under the islands', () => {
+    saveGuest({ avatar: 'fox', progress: {}, bestKnown: 0, lastSetId: null, schoolSetId: null, grownUp: null, startedAt: 1 })
+    render(<GuestHome sets={DEFAULT_SETS} />)
+    const setup = screen.getByTestId('grown-up-setup')
+    expect(setup).not.toHaveAttribute('open')
+    expect(setup.contains(screen.getByTestId('guest-starting-point'))).toBe(true)
+    expect(setup.contains(screen.getByTestId('guest-school-set'))).toBe(true)
+    const firstIsland = screen.getByRole('button', { name: /^Set 1,/ })
+    expect(setup.compareDocumentPosition(firstIsland) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

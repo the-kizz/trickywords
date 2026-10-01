@@ -11,7 +11,7 @@ import { SessionRunner } from '@/components/SessionRunner'
 import { sessionPool } from '@/lib/engine/session'
 import { currentSet, isSetFullyKnown } from '@/lib/engine/unlock'
 import { KnowThemAll } from '@/components/map/KnowThemAll'
-import { IslandWords } from '@/components/map/IslandWords'
+import { GrownUpSetup } from '@/components/map/GrownUpSetup'
 import { SchoolSetPicker } from '@/components/map/SchoolSetPicker'
 import { GrownUpToggle } from '@/components/map/GrownUpToggle'
 import { CardRun } from '@/components/family/CardRun'
@@ -508,6 +508,15 @@ export function GuestHome({ sets }: Props) {
         </button>
       )}
 
+      <GrownUpSetup>
+        <StartingPointPicker sets={sets} value={knownUpTo} onChange={setStartingPoint} />
+        <SchoolSetPicker
+          sets={sets}
+          value={guest.schoolSetId}
+          onChange={(setId) => persist({ ...guest, schoolSetId: setId })}
+        />
+      </GrownUpSetup>
+
       <ProgressMap
         sets={sets}
         progress={progress}
@@ -518,15 +527,6 @@ export function GuestHome({ sets }: Props) {
       />
 
       {knowsThemAll && <KnowThemAll stage={companionStage(guest.bestKnown)} />}
-
-      <IslandWords sets={sets} hereId={here?.id} schoolSetId={guest.schoolSetId}>
-        <StartingPointPicker sets={sets} value={knownUpTo} onChange={setStartingPoint} />
-        <SchoolSetPicker
-          sets={sets}
-          value={guest.schoolSetId}
-          onChange={(setId) => persist({ ...guest, schoolSetId: setId })}
-        />
-      </IslandWords>
 
       {StartAgainControl}
       {HonestyLine}
