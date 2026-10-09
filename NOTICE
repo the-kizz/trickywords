@@ -1,0 +1,19 @@
+Tricky Words bundles generated speech audio in public/audio/.
+
+The audio was generated offline with Piper
+(https://github.com/OHF-Voice/piper1-gpl) using the voice
+en_GB/alba/medium, which is licensed under Creative Commons
+Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+and trained on data from the University of Edinburgh
+(https://datashare.ed.ac.uk/handle/10283/3270).
+
+Fonts in public/fonts/ are licensed under the SIL Open Font License 1.1:
+  Andika   - SIL International
+  Baloo 2  - Ek Type
+
+Artwork in public/avatars/, public/companion/, public/stickers/,
+public/islands/, public/game-tiles/, public/brand/, public/icons/ and
+og-card.png was commissioned for this project and is owned by it. It replaced the
+generated placeholder avatars the app shipped with.
+
+Icons are from Phosphor Icons (https://phosphoricons.com), MIT licensed.

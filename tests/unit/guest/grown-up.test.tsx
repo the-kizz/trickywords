@@ -1,0 +1,163 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { GuestHome } from '@/components/guest/GuestHome'
+import { loadGuest, saveGuest, GUEST_KEY } from '@/lib/guest/store'
+import { GROWN_UP_DEFAULT } from '@/lib/teaching'
+import { recordCardRead, newProgress, BOX_INTERVALS } from '@/lib/engine/ladder'
+import { DEFAULT_SETS } from '@/lib/words/default-sets'
+import { installClipHarness } from '../audio/clip-harness'
+import type { WordProgress } from '@/lib/engine/types'
+
+/**
+ * The switch a parent actually reaches.
+ *
+ * Guest play is the public surface, and it is the one being used in
+ * practice -- so a Read it round that only ever appeared behind the
+ * family map was a round nobody met. It needs no server: guest progress
+ * already holds the same `WordProgress` records, in this device's
+ * localStorage.
+ */
+const SETS = DEFAULT_SETS
+
+beforeEach(() => {
+  sessionStorage.clear()
+  installClipHarness(() => {})
+})
+
+afterEach(() => { vi.useRealTimers() })
+
+/**
+ * The friend is a costume, not the key to the record. Children pick a
+ * different one each visit because there are so many; progress keyed to
+ * a friend would scatter across eight of them.
+ */
+describe('changing friend on the guest surface', () => {
+  const played = (): WordProgress => ({ ...newProgress('said'), box: 3, stage: 'reviewing' })
+
+  it('brings a returning child straight to the map, friend remembered', async () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', progress: { said: played() } })
+    render(<GuestHome sets={SETS} />)
+    await waitFor(() => expect(screen.getByTestId('change-friend')).toBeInTheDocument())
+    expect(screen.queryAllByTestId(/^avatar-/)).toHaveLength(0)
+  })
+
+  it('goes back to the picker from the friend on the map, and keeps everything', async () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', progress: { said: played() }, lastSetId: 4 })
+    render(<GuestHome sets={SETS} />)
+    await userEvent.click(await screen.findByTestId('change-friend'))
+    const avatars = screen.getAllByTestId(/^avatar-/)
+    expect(avatars.length).toBeGreaterThan(2)
+
+    // Pick a different one.
+    const other = avatars.find((a) => !a.getAttribute('data-testid')!.endsWith('fox')) ?? avatars[1]
+    await userEvent.click(other)
+    await waitFor(() => expect(screen.getByTestId('change-friend')).toBeInTheDocument())
+
+    const after = loadGuest()
+    expect(after.avatar).not.toBe('fox')
+    expect(after.progress.said).toEqual(played())
+    expect(after.lastSetId).toBe(4)
+  })
+})
+
+describe('a grown-up on the guest surface', () => {
+  it('is not assumed to be there: the page is shared with families we do not know', () => {
+    expect(GROWN_UP_DEFAULT).toBe(false)
+    // Nothing stored yet: the derived answer is the default, and the
+    // stored field stays null so the default can change later without
+    // every saved visit carrying the old one.
+    expect(loadGuest().grownUp).toBeNull()
+  })
+
+  it('offers the switch on the map, and remembers being turned on', async () => {
+    render(<GuestHome sets={SETS} />)
+    // Past the avatar step.
+    await userEvent.click(screen.getAllByRole('button')[0])
+    await waitFor(() => expect(screen.getByTestId('grown-up-toggle')).toBeInTheDocument())
+
+    const toggle = screen.getByTestId('grown-up-toggle') as HTMLInputElement
+    expect(toggle.checked).toBe(false)
+
+    await userEvent.click(toggle)
+    await waitFor(() => expect(loadGuest().grownUp).toBe(true))
+    // Persisted as a deliberate choice, not expired -- both states last
+    // until changed.
+    expect(JSON.parse(localStorage.getItem(GUEST_KEY)!).grownUp).toBe(true)
+  })
+
+  it('puts the switch above the islands, where a parent finds it without scrolling', async () => {
+    render(<GuestHome sets={SETS} />)
+    await userEvent.click(screen.getAllByRole('button')[0])
+    const toggle = await screen.findByTestId('grown-up-toggle')
+    const firstIsland = screen.getByTestId('map-companion')
+    // The companion sits on the map itself. DOM order is reading order
+    // here; nothing is repositioned by CSS.
+    expect(toggle.compareDocumentPosition(firstIsland) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy()
+  })
+
+  it('offers the card run only while a grown-up is there', async () => {
+    render(<GuestHome sets={SETS} />)
+    await userEvent.click(screen.getAllByRole('button')[0])
+    await waitFor(() => expect(screen.getByTestId('grown-up-toggle')).toBeInTheDocument())
+
+    expect(screen.queryByRole('button', { name: /Go through/ })).toBeNull()
+    await userEvent.click(screen.getByTestId('grown-up-toggle'))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Go through/ })).toBeInTheDocument())
+  })
+
+  it('keeps a turned-on switch across a reload of the same tab', () => {
+    saveGuest({ ...loadGuest(), avatar: 'fox', grownUp: true })
+    expect(loadGuest().grownUp).toBe(true)
+  })
+})
+
+/**
+ * One implementation of what a card is worth, shared by both surfaces --
+ * two copies would drift, and a fix to one would leave the other
+ * scoring an island differently.
+ */
+describe('what a card in a card run is worth', () => {
+  const word = (over: Partial<WordProgress> = {}): WordProgress =>
+    ({ ...newProgress('said'), box: 3, stage: 'reviewing', ...over })
+
+  it('credits a word read unaided, and counts the reading', () => {
+    const after = recordCardRead(word(), true, '2026-09-22')
+    expect(after.box).toBe(4)
+    expect(after.readToAdult).toBe(1)
+    expect(after.lastCreditedOn).toBe('2026-09-22')
+  })
+
+  it('records being told as a miss, so the cards can cost a word too', () => {
+    const before = word()
+    const after = recordCardRead(before, false, '2026-09-22')
+    expect(after.box).toBe(before.box - 1)
+    expect(after.lapses).toBe(before.lapses + 1)
+    expect(after.readToAdult).toBe(0)
+  })
+
+  /**
+   * A card run is an assessment taken outside the sessions, and no
+   * `decrementDue` pass follows it. Resetting the interval here would
+   * push these words further out every evening until they stopped
+   * coming back as review at all.
+   */
+  it('leaves the review schedule exactly where the sessions left it', () => {
+    const before = word({ dueInSessions: 2 })
+    expect(recordCardRead(before, true, '2026-09-22').dueInSessions).toBe(2)
+    expect(recordCardRead(before, false, '2026-09-22').dueInSessions).toBe(2)
+    // And it is genuinely untouched, not coincidentally equal to what
+    // the ladder would have set.
+    expect(BOX_INTERVALS[4]).not.toBe(2)
+  })
+
+  it('cannot be run up the ladder by going through the deck twice', () => {
+    const first = recordCardRead(word(), true, '2026-09-22')
+    const second = recordCardRead(first, true, '2026-09-22')
+    expect(second.box).toBe(first.box)
+    // The reading still counted, though -- it did happen.
+    expect(second.readToAdult).toBe(2)
+  })
+})
